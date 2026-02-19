@@ -5,12 +5,13 @@ import { getFirestore, collection, doc, setDoc, onSnapshot, addDoc, query, order
 import { Send, X, User, Sparkles, MessageSquare, PlusCircle, Settings, Check, Trash2, Clock, Moon, Sun } from 'lucide-react';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBEBpmZXx-wV_Y-Y7pBH3eUfjrjD95VVrA",
-  authDomain: "cove-chat.firebaseapp.com",
-  projectId: "cove-chat",
-  storageBucket: "cove-chat.firebasestorage.app",
-  messagingSenderId: "362797536309",
-  appId: "1:362797536309:web:c43a36a5a080acd5290d7c"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 const app = initializeApp(firebaseConfig);
