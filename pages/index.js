@@ -2119,35 +2119,7 @@ export default function CoveApp() {
         </div>
       )}
 
-      <style jsx global>{`
-        @keyframes bounce-subtle {
-          0%, 100% { transform: translate(-50%, 0); }
-          50% { transform: translate(-50%, -5px); }
-        }
-        .animate-bounce-subtle {
-          animation: bounce-subtle 2s infinite ease-in-out;
-        }
-        @keyframes msg-in {
-          0% { opacity: 0; transform: translateY(12px) scale(0.97); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .animate-msg-in {
-          animation: msg-in 0.3s ease-out both;
-        }
-        @keyframes menu-in {
-          0% { opacity: 0; transform: translateY(-8px) scale(0.95); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .animate-menu-in {
-          animation: menu-in 0.2s ease-out forwards;
-        }
-        @keyframes chat-slide-in {
-          0% { opacity: 0; transform: translateX(20px); }
-          100% { opacity: 1; transform: translateX(0); }
-        }
-        .animate-chat-in {
-          animation: chat-slide-in 0.35s ease-out forwards;
-        }
+      <style>{`
         ::-webkit-scrollbar {
           width: 5px;
         }
@@ -2155,11 +2127,8 @@ export default function CoveApp() {
           background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-          background: ${darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'};
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
           background: ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
+          border-radius: 10px;
         }
       `}</style>
 
@@ -2187,7 +2156,7 @@ export default function CoveApp() {
             {/* Local Stream (PIP) */}
             {call.type === 'video' && localStream && (
               <div className="absolute top-6 right-6 w-32 md:w-48 aspect-video bg-slate-800 rounded-2xl overflow-hidden border-2 border-white/20 shadow-xl z-10">
-                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover mirror" />
+                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ transform: 'rotateY(180deg)' }} />
               </div>
             )}
 
@@ -2220,9 +2189,7 @@ export default function CoveApp() {
             </div>
           </div>
 
-          <style jsx>{`
-            .mirror { transform: rotateY(180deg); }
-          `}</style>
+
         </div>
       )}
     </div>

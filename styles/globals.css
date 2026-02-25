@@ -31,3 +31,32 @@ body {
   background: #00337C;
   border-radius: 10px;
 }
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: translate(-50%, 0); }
+  50% { transform: translate(-50%, -5px); }
+}
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite ease-in-out;
+}
+@keyframes msg-in {
+  0% { opacity: 0; transform: translateY(12px) scale(0.97); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-msg-in {
+  animation: msg-in 0.3s ease-out both;
+}
+@keyframes menu-in {
+  0% { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-menu-in {
+  animation: menu-in 0.2s ease-out forwards;
+}
+@keyframes chat-slide-in {
+  0% { opacity: 0; transform: translateX(20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+.animate-chat-in {
+  animation: chat-slide-in 0.35s ease-out forwards;
+}
