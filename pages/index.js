@@ -11,7 +11,7 @@ import {
 import {
   Send, X, User, PlusCircle, Moon, Sun, Search, Smile,
   Settings, LogOut, Camera, MessageSquare, MoreVertical, Check, Trash2, Reply, ArrowRight, Paperclip, FileText, Download, Mic, Maximize,
-  Pin, Ban, AlertTriangle, CheckCheck, Loader2, Users, UserPlus, UserMinus, Crown, LogOut as LogOutIcon, Image
+  Pin, Ban, AlertTriangle, CheckCheck, Loader2, Users, UserPlus, UserMinus, Crown, LogOut as LogOutIcon, Image, Lock
 } from 'lucide-react';
 
 // --- CONFIG ---
@@ -55,6 +55,8 @@ export default function CoveApp() {
   const [darkMode, setDarkMode] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSignUp, setIsSignUp] = useState(false);
   const [username, setUsername] = useState("");
   const [messageInput, setMessageInput] = useState("");
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -413,49 +415,43 @@ export default function CoveApp() {
       showToast("Enter a valid email", "error");
       return;
     }
+    if (password.length < 6) {
+      showToast("Password must be at least 6 characters", "error");
+      return;
+    }
+    if (isSignUp && !username) {
+      showToast("Please enter a username", "error");
+      return;
+    }
+
     const cleanEmail = email.toLowerCase().trim();
     setAuthLoading(true);
 
-    const PASSWORDS_TO_TRY = [DUMMY_PW, "cove_password_123", "cove_password_safe_123", "password"];
-
     try {
-      // Step 1: Sequential login attempt with common dummy passwords
-      let success = false;
-      for (const pw of PASSWORDS_TO_TRY) {
-        try {
-          await signInWithEmailAndPassword(auth, cleanEmail, pw);
-          success = true;
-          break;
-        } catch (e) {
-          if (e.code === 'auth/user-not-found') break; // User doesn't exist, go to Step 2
-          continue; // Try next password
-        }
-      }
-
-      // Step 2: Handle results
-      if (!success) {
-        // Check if user exists but we failed all passwords
-        try {
-          // If we reach here, it means either user not found OR user found but wrong password
-          // Attempting to create will tell us if they exist
-          const res = await createUserWithEmailAndPassword(auth, cleanEmail, DUMMY_PW);
-          await setDoc(doc(db, 'users', res.user.uid), {
-            uid: res.user.uid,
-            name: username || cleanEmail.split('@')[0],
-            email: cleanEmail,
-            photoURL: null,
-            createdAt: serverTimestamp()
-          });
-        } catch (signupErr) {
-          if (signupErr.code === 'auth/email-already-in-use') {
-            showToast("Account exists with a different password. (Old Cove?)", "error");
-          } else {
-            showToast("Auth Error: " + signupErr.code, "error");
-          }
-        }
+      if (isSignUp) {
+        // Sign Up Flow
+        const res = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+        await setDoc(doc(db, 'users', res.user.uid), {
+          uid: res.user.uid,
+          name: username,
+          email: cleanEmail,
+          photoURL: null,
+          createdAt: serverTimestamp()
+        });
+        showToast("Welcome to Cove!", "success");
+      } else {
+        // Login Flow
+        await signInWithEmailAndPassword(auth, cleanEmail, password);
       }
     } catch (err) {
-      showToast("System Error: " + err.code, "error");
+      console.error("Auth Error:", err.code);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        showToast("Invalid email or password", "error");
+      } else if (err.code === 'auth/email-already-in-use') {
+        showToast("Email already registered. Try logging in.", "error");
+      } else {
+        showToast("Error: " + err.code, "error");
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -1123,13 +1119,19 @@ export default function CoveApp() {
           <img src={darkMode ? ASSETS.logoNameWhite : ASSETS.logoNameNavy} alt="Cove Messenger" className="h-12 object-contain mb-12" />
 
           <div className="space-y-4 w-full">
-            <div className="relative group">
-              <User className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-300 group-focus-within:text-[#00337C]'}`} size={18} />
-              <input className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${darkMode ? 'bg-white/5 text-white focus:bg-white/10' : 'bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#00337C]/10'}`} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
-            </div>
+            {isSignUp && (
+              <div className="relative group animate-msg-in">
+                <User className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-300 group-focus-within:text-[#00337C]'}`} size={18} />
+                <input className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${darkMode ? 'bg-white/5 text-white focus:bg-white/10' : 'bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#00337C]/10'}`} placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
+              </div>
+            )}
             <div className="relative group">
               <MessageSquare className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-300 group-focus-within:text-[#00337C]'}`} size={18} />
               <input className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${darkMode ? 'bg-white/5 text-white focus:bg-white/10' : 'bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#00337C]/10'}`} placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+            </div>
+            <div className="relative group">
+              <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-300 group-focus-within:text-[#00337C]'}`} size={18} />
+              <input type="password" className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${darkMode ? 'bg-white/5 text-white focus:bg-white/10' : 'bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#00337C]/10'}`} placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} />
             </div>
             <button
               onClick={handleAuth}
@@ -1142,8 +1144,14 @@ export default function CoveApp() {
                   Connecting...
                 </>
               ) : (
-                "Get started with Cove"
+                isSignUp ? "Create Account" : "Sign In to Cove"
               )}
+            </button>
+            <button
+              onClick={() => setIsSignUp(!isSignUp)}
+              className={`w-full text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity p-2 ${darkMode ? 'text-white' : 'text-slate-900'}`}
+            >
+              {isSignUp ? "Already have an account? Sign In" : "Don't have an account? Create one"}
             </button>
           </div>
           <p className={`mt-8 text-[11px] font-bold uppercase tracking-widest opacity-40 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Secure • Private • Fast</p>
