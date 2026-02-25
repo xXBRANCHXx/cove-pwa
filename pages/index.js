@@ -109,7 +109,8 @@ export default function CoveApp() {
   const [isCameraOff, setIsCameraOff] = useState(false);
   const ringtoneRef = useRef(null);
   const dialtoneRef = useRef(null);
-  const notificationShownRef = useRef(null); // Track call ID for shown notification
+  const notificationShownRef = useRef(null);
+  const unsubsRef = useRef([]); // Track listeners for cleanup
 
   // Initialize sounds
   useEffect(() => {
@@ -1135,8 +1136,14 @@ export default function CoveApp() {
   };
 
   const endCall = async () => {
+    console.log("DEBUG: Ending call and cleaning up...");
+
+    // Cleanup listeners
+    unsubsRef.current.forEach(u => { try { u(); } catch (e) { } });
+    unsubsRef.current = [];
+
     if (pcRef.current) {
-      pcRef.current.close();
+      try { pcRef.current.close(); } catch (e) { }
       pcRef.current = null;
     }
     if (localStream) {
@@ -1153,10 +1160,13 @@ export default function CoveApp() {
     setCall(null);
     setIsMicMuted(false);
     setIsCameraOff(false);
+    notificationShownRef.current = null;
   };
 
   const startCall = async (type = 'video') => {
-    if (!activeChat || !userData) return;
+    if (!activeChat || !userData || call) return; // Don't start if already in a call
+    console.log("DEBUG: Starting call of type:", type);
+
     const receiverEmail = activeChat.isGroup ? null : activeChat.participants.find(p => p !== userData.email);
     if (!receiverEmail) {
       showToast("Calls are currently only supported in 1-on-1 chats", "info");
@@ -1176,6 +1186,7 @@ export default function CoveApp() {
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
       pc.ontrack = (event) => {
+        console.log("DEBUG: Recieved remote track");
         setRemoteStream(event.streams[0]);
       };
 
@@ -1183,42 +1194,48 @@ export default function CoveApp() {
       const offerDescription = await pc.createOffer();
       await pc.setLocalDescription(offerDescription);
 
-      const offer = {
-        sdp: offerDescription.sdp,
-        type: offerDescription.type,
-      };
-
       await setDoc(callDoc, {
         type,
         caller: userData.email,
         receiver: receiverEmail,
         status: 'dialing',
-        offer,
+        offer: { sdp: offerDescription.sdp, type: offerDescription.type },
         createdAt: serverTimestamp(),
       });
 
       setCall({ id: callDoc.id, type, caller: userData.email, receiver: receiverEmail, status: 'dialing', isIncoming: false });
 
-      // Listen for Firestore updates to this call
-      onSnapshot(callDoc, async (snapshot) => {
+      // Timeout for no answer (30 seconds)
+      const timeout = setTimeout(() => {
+        if (call?.status === 'dialing') {
+          showToast("Call timed out: No answer", "info");
+          endCall();
+        }
+      }, 30000);
+
+      // Listen for Firestore updates
+      const unsubCall = onSnapshot(callDoc, async (snapshot) => {
         const data = snapshot.data();
         if (!data) return;
 
-        // Sync local state with Firestore
         setCall(prev => prev ? { ...prev, ...data } : null);
 
         if (!pcRef.current.currentRemoteDescription && data.answer) {
+          clearTimeout(timeout);
+          console.log("DEBUG: Call answered, setting remote description");
           const answerDescription = new RTCSessionDescription(data.answer);
           await pcRef.current.setRemoteDescription(answerDescription);
         }
 
         if (data.status === 'ended' || data.status === 'rejected') {
+          clearTimeout(timeout);
           endCall();
         }
       });
+      unsubsRef.current.push(unsubCall);
 
       // Listen for ICE candidates from receiver
-      onSnapshot(collection(db, 'calls', callDoc.id, 'receiverCandidates'), (snapshot) => {
+      const unsubRecvICE = onSnapshot(collection(db, 'calls', callDoc.id, 'receiverCandidates'), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             const data = change.doc.data();
@@ -1226,8 +1243,9 @@ export default function CoveApp() {
           }
         });
       });
+      unsubsRef.current.push(unsubRecvICE);
 
-      // Send local ICE candidates to receiver
+      // Send local ICE candidates
       pc.onicecandidate = (event) => {
         if (event.candidate) {
           addDoc(collection(db, 'calls', callDoc.id, 'callerCandidates'), event.candidate.toJSON());
@@ -1237,10 +1255,12 @@ export default function CoveApp() {
     } catch (err) {
       console.error("Start call failed:", err);
       showToast("Could not start call: " + err.message, "error");
+      endCall();
     }
   };
 
   const joinCall = async (incomingCall) => {
+    console.log("DEBUG: Joining incoming call:", incomingCall.id);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
@@ -1259,7 +1279,6 @@ export default function CoveApp() {
 
       const callDoc = doc(db, 'calls', incomingCall.id);
 
-      // Immediately update local state to stop ringing
       setCall(prev => ({ ...prev, status: 'connecting' }));
       await updateDoc(callDoc, { status: 'connecting' });
 
@@ -1269,12 +1288,10 @@ export default function CoveApp() {
       const answerDescription = await pc.createAnswer();
       await pc.setLocalDescription(answerDescription);
 
-      const answer = {
-        type: answerDescription.type,
-        sdp: answerDescription.sdp,
-      };
-
-      await updateDoc(callDoc, { answer, status: 'ongoing' });
+      await updateDoc(callDoc, {
+        answer: { type: answerDescription.type, sdp: answerDescription.sdp },
+        status: 'ongoing'
+      });
 
       // Send local ICE candidates to caller
       pc.onicecandidate = (event) => {
@@ -1284,7 +1301,7 @@ export default function CoveApp() {
       };
 
       // Listen for ICE candidates from caller
-      onSnapshot(collection(db, 'calls', incomingCall.id, 'callerCandidates'), (snapshot) => {
+      const unsubCallerICE = onSnapshot(collection(db, 'calls', incomingCall.id, 'callerCandidates'), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === 'added') {
             const data = change.doc.data();
@@ -1292,19 +1309,18 @@ export default function CoveApp() {
           }
         });
       });
+      unsubsRef.current.push(unsubCallerICE);
 
-      // Listen for Firestore updates to this call
-      onSnapshot(callDoc, (snapshot) => {
+      // Listen for call updates
+      const unsubCallUpdate = onSnapshot(callDoc, (snapshot) => {
         const data = snapshot.data();
         if (!data) return;
-
-        // Keep local state in sync
         setCall(prev => prev ? { ...prev, ...data } : null);
-
         if (data.status === 'ended' || data.status === 'rejected') {
           endCall();
         }
       });
+      unsubsRef.current.push(unsubCallUpdate);
 
     } catch (err) {
       console.error("Join call failed:", err);
@@ -1323,24 +1339,27 @@ export default function CoveApp() {
   // Listen for incoming calls
   useEffect(() => {
     if (!userData?.email) return;
+
+    // Filter by timestamp to only see calls from the last 60 seconds
+    const sixtySecondsAgo = new Date(Date.now() - 60000);
+
     const q = query(
       collection(db, 'calls'),
       where('receiver', '==', userData.email),
       where('status', '==', 'dialing'),
+      where('createdAt', '>', sixtySecondsAgo),
       limit(1)
     );
-    // Remove 'call' from dependencies to prevent listener loop
+
     const unsub = onSnapshot(q, (snap) => {
-      if (!snap.empty) {
-        setCall(prev => {
-          if (prev) return prev; // Don't overwrite if already in a call
-          const doc = snap.docs[0];
-          return { id: doc.id, isIncoming: true, ...doc.data() };
-        });
+      if (!snap.empty && !call) {
+        const docSnap = snap.docs[0];
+        console.log("DEBUG: Setting incoming call state");
+        setCall({ id: docSnap.id, isIncoming: true, ...docSnap.data() });
       }
     });
     return unsub;
-  }, [userData?.email]);
+  }, [userData?.email, !!call]);
 
   // Video element sync
   useEffect(() => {
