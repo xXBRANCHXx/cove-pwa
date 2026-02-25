@@ -1209,6 +1209,14 @@ export default function CoveApp() {
 
       setCall({ id: callDoc.id, type, caller: userData.email, receiver: receiverEmail, status: 'dialing', isIncoming: false });
 
+      // Timeout for no answer (30 seconds)
+      const timeout = setTimeout(() => {
+        if (pcRef.current && pcRef.current.signalingState !== 'stable') {
+          showToast("Call timed out: No answer", "info");
+          endCall();
+        }
+      }, 30000);
+
       // Listen for Firestore updates
       const unsubCall = onSnapshot(callDoc, async (snapshot) => {
         const data = snapshot.data();
@@ -1225,7 +1233,7 @@ export default function CoveApp() {
           // Process queued candidates
           console.log(`DEBUG: Processing ${candidateQueueRef.current.length} queued candidates`);
           candidateQueueRef.current.forEach(cand => {
-            pcRef.current.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.error("ICE Queue Error:", e));
+            if (pcRef.current) pcRef.current.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.error("ICE Queue Error:", e));
           });
           candidateQueueRef.current = [];
         }
