@@ -1679,12 +1679,20 @@ export default function CoveApp() {
                 })()}
                 <div className="ml-auto flex items-center justify-end gap-2 md:gap-4 relative">
                   {!activeChat.isGroup && (
-                    <div className="flex items-center gap-1 md:gap-2 mr-2">
-                      <button onClick={() => startCall('audio')} className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>
-                        <Phone size={18} />
+                    <div className="flex items-center gap-2 md:gap-4 mr-2 relative z-[40]">
+                      <button
+                        onClick={() => { console.log('DEBUG: Audio call button clicked'); startCall('audio'); }}
+                        className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
+                        title="Voice Call"
+                      >
+                        <Phone size={isMobile ? 18 : 20} />
                       </button>
-                      <button onClick={() => startCall('video')} className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>
-                        <Video size={18} />
+                      <button
+                        onClick={() => { console.log('DEBUG: Video call button clicked'); startCall('video'); }}
+                        className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
+                        title="Video Call"
+                      >
+                        <Video size={isMobile ? 18 : 20} />
                       </button>
                     </div>
                   )}
@@ -1790,9 +1798,21 @@ export default function CoveApp() {
                   const isOwnMessage = msg.senderEmail === userData.email;
                   const senderUser = usersByEmail[msg.senderEmail?.toLowerCase()];
                   const senderName = senderUser?.name || (msg.senderEmail || '').split('@')[0];
+                  const senderPhoto = senderUser?.photoURL || null;
                   return (
-                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
-                      <div className="group relative max-w-[70%]">
+                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex gap-3 relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                      {isGroupChat && !isOwnMessage && (
+                        <div className="flex flex-col justify-end pb-1">
+                          {senderPhoto ? (
+                            <img src={senderPhoto} alt={senderName} className="w-8 h-8 rounded-xl object-cover" />
+                          ) : (
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black ${darkMode ? 'bg-white/10 text-white' : 'bg-[#00337C]/10 text-[#00337C]'}`}>
+                              {senderName.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <div className={`group relative max-w-[70%] ${isOwnMessage ? 'flex flex-col items-end' : ''}`}>
                         <div className={`absolute -top-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isOwnMessage ? 'right-0' : 'left-0'}`}>
                           <button onClick={() => setForwardItem(msg)} title="Forward" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-green-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><ArrowRight size={14} /></button>
                           <button onClick={() => setReplyTo(msg)} title="Reply" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-blue-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><Reply size={14} /></button>
@@ -2017,9 +2037,14 @@ export default function CoveApp() {
       {showGroupInfo && activeChat?.isGroup && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6 z-50">
           <div className={`p-8 rounded-[40px] w-full max-w-md shadow-2xl transition-colors max-h-[85vh] overflow-y-auto ${darkMode ? 'bg-[#111827] border border-white/10' : 'bg-white'}`}>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className={`text-xl font-black ${darkMode ? 'text-white' : 'text-[#00337C]'}`}>{activeChat.groupName}</h2>
-              <button onClick={() => setShowGroupInfo(false)} className="p-2 rounded-full hover:bg-slate-100/10"><X size={18} /></button>
+            <div className="flex items-center gap-4 mb-6">
+              {isMobile && (
+                <button onClick={() => setShowGroupInfo(false)} className={`p-2 rounded-full ${darkMode ? 'bg-white/5 text-white' : 'bg-slate-50 text-slate-500'}`}>
+                  <ArrowRight size={20} className="rotate-180" />
+                </button>
+              )}
+              <h2 className={`text-xl font-black flex-1 ${darkMode ? 'text-white' : 'text-[#00337C]'}`}>{activeChat.groupName}</h2>
+              {!isMobile && <button onClick={() => setShowGroupInfo(false)} className="p-2 rounded-full hover:bg-slate-100/10"><X size={18} /></button>}
             </div>
 
             {/* Group Photo */}
@@ -2153,7 +2178,7 @@ export default function CoveApp() {
 
       {/* CALL OVERLAY */}
       {call && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[1000] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4" style={{ pointerEvents: 'auto' }}>
           <div className="w-full max-w-4xl aspect-video bg-black rounded-[40px] overflow-hidden shadow-2xl relative border border-white/10">
             {/* Remote Stream */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -2180,16 +2205,28 @@ export default function CoveApp() {
             )}
 
             {/* Call Controls */}
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-20">
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-50">
               {call.isIncoming && call.status === 'dialing' ? (
-                <>
-                  <button onClick={() => joinCall(call)} className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all">
-                    <Phone size={28} />
-                  </button>
-                  <button onClick={() => rejectCall(call)} className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all">
-                    <PhoneOff size={28} />
-                  </button>
-                </>
+                <div className="flex items-center gap-6 md:gap-10">
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); console.log('DEBUG: Accept button clicked'); joinCall(call); }}
+                      className="w-20 h-20 rounded-full bg-green-500 text-white flex items-center justify-center shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:scale-110 active:scale-90 transition-all cursor-pointer relative z-[60]"
+                    >
+                      <Phone size={32} />
+                    </button>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Accept</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); console.log('DEBUG: Reject button clicked'); rejectCall(call); }}
+                      className="w-20 h-20 rounded-full bg-red-500 text-white flex items-center justify-center shadow-[0_0_30px_rgba(239,44,44,0.4)] hover:scale-110 active:scale-90 transition-all cursor-pointer relative z-[60]"
+                    >
+                      <PhoneOff size={32} />
+                    </button>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Decline</span>
+                  </div>
+                </div>
               ) : (
                 <>
                   <button onClick={toggleMic} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${isMicMuted ? 'bg-red-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'}`}>
