@@ -402,23 +402,43 @@ export default function CoveApp() {
   }, [emojiTab, allEmojiObjects.length]);
 
   // --- ACTIONS ---
+  const [authLoading, setAuthLoading] = useState(false);
+
   const handleAuth = async () => {
-    if (!email) return;
+    if (!email || !email.includes('@')) {
+      showToast("Please enter a valid email address", "error");
+      return;
+    }
     const cleanEmail = email.toLowerCase().trim();
+    setAuthLoading(true);
     try {
       await signInWithEmailAndPassword(auth, cleanEmail, DUMMY_PW);
     } catch (err) {
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+      console.error("Auth error:", err.code, err.message);
+      // If user doesn't exist or credentials are invalid (usually means new user in this dummy flow)
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         try {
           const res = await createUserWithEmailAndPassword(auth, cleanEmail, DUMMY_PW);
           await setDoc(doc(db, 'users', res.user.uid), {
             uid: res.user.uid,
             name: username || cleanEmail.split('@')[0],
             email: cleanEmail,
-            photoURL: null
+            photoURL: null,
+            createdAt: serverTimestamp()
           });
-        } catch (signupErr) { console.error(signupErr); }
+        } catch (signupErr) {
+          console.error("Signup error:", signupErr);
+          if (signupErr.code === 'auth/email-already-in-use') {
+            showToast("This email is already registered with a different password.", "error");
+          } else {
+            showToast("Failed to create account: " + signupErr.message, "error");
+          }
+        }
+      } else {
+        showToast("Authentication failed: " + err.message, "error");
       }
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -1092,7 +1112,20 @@ export default function CoveApp() {
               <MessageSquare className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${darkMode ? 'text-slate-500 group-focus-within:text-blue-400' : 'text-slate-300 group-focus-within:text-[#00337C]'}`} size={18} />
               <input className={`w-full p-4 pl-12 rounded-2xl outline-none font-bold transition-all ${darkMode ? 'bg-white/5 text-white focus:bg-white/10' : 'bg-slate-50 text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#00337C]/10'}`} placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
             </div>
-            <button onClick={handleAuth} className="w-full py-4 bg-gradient-to-r from-[#00337C] to-[#0055A4] text-white rounded-2xl font-black shadow-lg shadow-blue-900/20 active:scale-95 transition-all uppercase tracking-widest mt-4">Get started with Cove</button>
+            <button
+              onClick={handleAuth}
+              disabled={authLoading}
+              className={`w-full py-4 bg-gradient-to-r from-[#00337C] to-[#0055A4] text-white rounded-2xl font-black shadow-lg shadow-blue-900/20 active:scale-95 transition-all uppercase tracking-widest mt-4 flex items-center justify-center gap-2 ${authLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {authLoading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Connecting...
+                </>
+              ) : (
+                "Get started with Cove"
+              )}
+            </button>
           </div>
           <p className={`mt-8 text-[11px] font-bold uppercase tracking-widest opacity-40 ${darkMode ? 'text-white' : 'text-slate-900'}`}>Secure • Private • Fast</p>
         </div>
