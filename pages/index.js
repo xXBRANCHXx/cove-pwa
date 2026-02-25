@@ -111,6 +111,8 @@ export default function CoveApp() {
   const dialtoneRef = useRef(null);
   const notificationShownRef = useRef(null);
   const unsubsRef = useRef([]); // Track listeners for cleanup
+  const handledCallsRef = useRef(new Set()); // Track call IDs we've already interacted with
+  const candidateQueueRef = useRef([]); // Queue candidates until remote description is set
 
   // Initialize sounds
   useEffect(() => {
@@ -1153,11 +1155,13 @@ export default function CoveApp() {
     setRemoteStream(null);
 
     if (call?.id) {
+      handledCallsRef.current.add(call.id);
       try {
         await updateDoc(doc(db, 'calls', call.id), { status: 'ended', endedAt: serverTimestamp() });
       } catch (e) { }
     }
     setCall(null);
+    candidateQueueRef.current = [];
     setIsMicMuted(false);
     setIsCameraOff(false);
     notificationShownRef.current = null;
@@ -1205,18 +1209,10 @@ export default function CoveApp() {
 
       setCall({ id: callDoc.id, type, caller: userData.email, receiver: receiverEmail, status: 'dialing', isIncoming: false });
 
-      // Timeout for no answer (30 seconds)
-      const timeout = setTimeout(() => {
-        if (call?.status === 'dialing') {
-          showToast("Call timed out: No answer", "info");
-          endCall();
-        }
-      }, 30000);
-
       // Listen for Firestore updates
       const unsubCall = onSnapshot(callDoc, async (snapshot) => {
         const data = snapshot.data();
-        if (!data) return;
+        if (!data || !pcRef.current) return;
 
         setCall(prev => prev ? { ...prev, ...data } : null);
 
@@ -1225,6 +1221,13 @@ export default function CoveApp() {
           console.log("DEBUG: Call answered, setting remote description");
           const answerDescription = new RTCSessionDescription(data.answer);
           await pcRef.current.setRemoteDescription(answerDescription);
+
+          // Process queued candidates
+          console.log(`DEBUG: Processing ${candidateQueueRef.current.length} queued candidates`);
+          candidateQueueRef.current.forEach(cand => {
+            pcRef.current.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.error("ICE Queue Error:", e));
+          });
+          candidateQueueRef.current = [];
         }
 
         if (data.status === 'ended' || data.status === 'rejected') {
@@ -1237,9 +1240,13 @@ export default function CoveApp() {
       // Listen for ICE candidates from receiver
       const unsubRecvICE = onSnapshot(collection(db, 'calls', callDoc.id, 'receiverCandidates'), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
+          if (change.type === 'added' && pcRef.current) {
             const data = change.doc.data();
-            pc.addIceCandidate(new RTCIceCandidate(data));
+            if (pcRef.current.currentRemoteDescription) {
+              pcRef.current.addIceCandidate(new RTCIceCandidate(data)).catch(e => console.error("ICE Add Error:", e));
+            } else {
+              candidateQueueRef.current.push(data);
+            }
           }
         });
       });
@@ -1284,6 +1291,13 @@ export default function CoveApp() {
 
       const offerDescription = new RTCSessionDescription(incomingCall.offer);
       await pc.setRemoteDescription(offerDescription);
+      console.log("DEBUG: Remote description set on join");
+
+      // Process any queued candidates if any (though unlikely here)
+      candidateQueueRef.current.forEach(cand => {
+        pc.addIceCandidate(new RTCIceCandidate(cand)).catch(e => console.log("ICE Queue Error:", e));
+      });
+      candidateQueueRef.current = [];
 
       const answerDescription = await pc.createAnswer();
       await pc.setLocalDescription(answerDescription);
@@ -1303,9 +1317,13 @@ export default function CoveApp() {
       // Listen for ICE candidates from caller
       const unsubCallerICE = onSnapshot(collection(db, 'calls', incomingCall.id, 'callerCandidates'), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
-          if (change.type === 'added') {
+          if (change.type === 'added' && pcRef.current) {
             const data = change.doc.data();
-            pc.addIceCandidate(new RTCIceCandidate(data));
+            if (pcRef.current.currentRemoteDescription) {
+              pcRef.current.addIceCandidate(new RTCIceCandidate(data)).catch(e => console.log("ICE Join Error:", e));
+            } else {
+              candidateQueueRef.current.push(data);
+            }
           }
         });
       });
@@ -1330,10 +1348,12 @@ export default function CoveApp() {
   };
 
   const rejectCall = async (incomingCall) => {
+    console.log("DEBUG: Rejecting call:", incomingCall.id);
+    handledCallsRef.current.add(incomingCall.id);
+    setCall(null);
     try {
       await updateDoc(doc(db, 'calls', incomingCall.id), { status: 'rejected' });
     } catch (e) { }
-    setCall(null);
   };
 
   // Listen for incoming calls
@@ -1354,7 +1374,11 @@ export default function CoveApp() {
     const unsub = onSnapshot(q, (snap) => {
       if (!snap.empty && !call) {
         const docSnap = snap.docs[0];
-        console.log("DEBUG: Setting incoming call state");
+        if (handledCallsRef.current.has(docSnap.id)) {
+          console.log("DEBUG: Call already handled, skipping listener trigger");
+          return;
+        }
+        console.log("DEBUG: Setting incoming call state for ID:", docSnap.id);
         setCall({ id: docSnap.id, isIncoming: true, ...docSnap.data() });
       }
     });
