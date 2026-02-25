@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import Head from 'next/head';
 import { initializeApp } from 'firebase/app';
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
@@ -108,6 +109,7 @@ export default function CoveApp() {
   const [isCameraOff, setIsCameraOff] = useState(false);
   const ringtoneRef = useRef(null);
   const dialtoneRef = useRef(null);
+  const notificationShownRef = useRef(null); // Track call ID for shown notification
 
   // Initialize sounds
   useEffect(() => {
@@ -1327,13 +1329,18 @@ export default function CoveApp() {
       where('status', '==', 'dialing'),
       limit(1)
     );
-    return onSnapshot(q, (snap) => {
-      if (!snap.empty && !call) {
-        const doc = snap.docs[0];
-        setCall({ id: doc.id, isIncoming: true, ...doc.data() });
+    // Remove 'call' from dependencies to prevent listener loop
+    const unsub = onSnapshot(q, (snap) => {
+      if (!snap.empty) {
+        setCall(prev => {
+          if (prev) return prev; // Don't overwrite if already in a call
+          const doc = snap.docs[0];
+          return { id: doc.id, isIncoming: true, ...doc.data() };
+        });
       }
     });
-  }, [userData?.email, call]);
+    return unsub;
+  }, [userData?.email]);
 
   // Video element sync
   useEffect(() => {
@@ -1345,6 +1352,7 @@ export default function CoveApp() {
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(e => console.log("Remote play blocked:", e));
     }
   }, [remoteStream, call]);
 
@@ -1363,7 +1371,8 @@ export default function CoveApp() {
         // Incoming call: play ringtone and show notification
         ringtoneRef.current?.play().catch(() => console.log('Ringtone blocked by browser'));
 
-        if (Notification.permission === 'granted') {
+        if (Notification.permission === 'granted' && notificationShownRef.current !== call.id) {
+          notificationShownRef.current = call.id;
           const notif = new Notification("Cove Incoming Call", {
             body: `${call.caller.split('@')[0]} is calling you!`,
             icon: ASSETS.logoNavy,
@@ -1486,6 +1495,12 @@ export default function CoveApp() {
 
   return (
     <div className={`fixed inset-0 flex overflow-hidden ${darkMode ? 'bg-[#0a0f1e] text-white' : 'bg-white text-slate-900'}`}>
+      <Head>
+        <title>Cove | Secure Private Messaging</title>
+        <meta name="description" content="Secure, private, and fast communication with Cove Messenger." />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+        <link rel="icon" href={ASSETS.logoNavy} />
+      </Head>
 
       {/* SIDEBAR / CONVO LIST */}
       <div className={`${isMobile ? 'w-full' : 'w-[350px]'} flex flex-col border-r ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'} ${!showConvoList ? 'hidden' : 'flex'}`}>
