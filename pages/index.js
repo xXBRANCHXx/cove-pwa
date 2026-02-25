@@ -405,17 +405,25 @@ export default function CoveApp() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const handleAuth = async () => {
+    // 1. Diagnostic: Check if environment variables are loaded
+    if (!firebaseConfig.apiKey) {
+      showToast("Firebase Config missing. Check Vercel Env Vars!", "error");
+      return;
+    }
+
     if (!email || !email.includes('@')) {
       showToast("Please enter a valid email address", "error");
       return;
     }
     const cleanEmail = email.toLowerCase().trim();
     setAuthLoading(true);
+
     try {
       await signInWithEmailAndPassword(auth, cleanEmail, DUMMY_PW);
     } catch (err) {
-      console.error("Auth error:", err.code, err.message);
-      // If user doesn't exist or credentials are invalid (usually means new user in this dummy flow)
+      console.error("Auth Error Code:", err.code);
+
+      // 2. Logic: If login fails due to credentials, try finding or creating account
       if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
         try {
           const res = await createUserWithEmailAndPassword(auth, cleanEmail, DUMMY_PW);
@@ -427,15 +435,15 @@ export default function CoveApp() {
             createdAt: serverTimestamp()
           });
         } catch (signupErr) {
-          console.error("Signup error:", signupErr);
+          console.error("Signup Error Code:", signupErr.code);
           if (signupErr.code === 'auth/email-already-in-use') {
-            showToast("This email is already registered with a different password.", "error");
+            showToast("Login failed: credentials mismatch.", "error");
           } else {
-            showToast("Failed to create account: " + signupErr.message, "error");
+            showToast("System Error: " + signupErr.code, "error");
           }
         }
       } else {
-        showToast("Authentication failed: " + err.message, "error");
+        showToast("Error: " + (err.code || "Connection failed"), "error");
       }
     } finally {
       setAuthLoading(false);
