@@ -11,7 +11,8 @@ import {
 import {
   Send, X, User, PlusCircle, Moon, Sun, Search, Smile,
   Settings, LogOut, Camera, MessageSquare, MoreVertical, Check, Trash2, Reply, ArrowRight, Paperclip, FileText, Download, Mic, Maximize,
-  Pin, Ban, AlertTriangle, CheckCheck, Loader2, Users, UserPlus, UserMinus, Crown, LogOut as LogOutIcon, Image, Lock
+  Pin, Ban, AlertTriangle, CheckCheck, Loader2, Users, UserPlus, UserMinus, Crown, LogOut as LogOutIcon, Image, Lock,
+  Phone, Video, PhoneOff, MicOff, VideoOff
 } from 'lucide-react';
 
 // --- CONFIG ---
@@ -95,6 +96,16 @@ export default function CoveApp() {
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState('chats'); // 'chats' | 'settings'
   const [toast, setToast] = useState(null); // { message, type }
+
+  // --- CALLING STATE ---
+  const [call, setCall] = useState(null); // { id, type, caller, receiver, status, isIncoming }
+  const [localStream, setLocalStream] = useState(null);
+  const [remoteStream, setRemoteStream] = useState(null);
+  const pcRef = useRef(null);
+  const localVideoRef = useRef(null);
+  const remoteVideoRef = useRef(null);
+  const [isMicMuted, setIsMicMuted] = useState(false);
+  const [isCameraOff, setIsCameraOff] = useState(false);
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
@@ -1091,6 +1102,234 @@ export default function CoveApp() {
     }
   };
 
+  // --- WEBRTC CALLING LOGIC ---
+  const servers = {
+    iceServers: [
+      { urls: ['stun:stun1.l.google.com:19302', 'stun:stun2.l.google.com:19302'] },
+    ],
+    iceCandidatePoolSize: 10,
+  };
+
+  const endCall = async () => {
+    if (pcRef.current) {
+      pcRef.current.close();
+      pcRef.current = null;
+    }
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      setLocalStream(null);
+    }
+    setRemoteStream(null);
+
+    if (call?.id) {
+      try {
+        await updateDoc(doc(db, 'calls', call.id), { status: 'ended', endedAt: serverTimestamp() });
+      } catch (e) { }
+    }
+    setCall(null);
+    setIsMicMuted(false);
+    setIsCameraOff(false);
+  };
+
+  const startCall = async (type = 'video') => {
+    if (!activeChat || !userData) return;
+    const receiverEmail = activeChat.isGroup ? null : activeChat.participants.find(p => p !== userData.email);
+    if (!receiverEmail) {
+      showToast("Calls are currently only supported in 1-on-1 chats", "info");
+      return;
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: type === 'video'
+      });
+      setLocalStream(stream);
+
+      const pc = new RTCPeerConnection(servers);
+      pcRef.current = pc;
+
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+      pc.ontrack = (event) => {
+        setRemoteStream(event.streams[0]);
+      };
+
+      const callDoc = doc(collection(db, 'calls'));
+      const offerDescription = await pc.createOffer();
+      await pc.setLocalDescription(offerDescription);
+
+      const offer = {
+        sdp: offerDescription.sdp,
+        type: offerDescription.type,
+      };
+
+      await setDoc(callDoc, {
+        type,
+        caller: userData.email,
+        receiver: receiverEmail,
+        status: 'dialing',
+        offer,
+        createdAt: serverTimestamp(),
+      });
+
+      setCall({ id: callDoc.id, type, caller: userData.email, receiver: receiverEmail, status: 'dialing', isIncoming: false });
+
+      // Listen for answer
+      onSnapshot(callDoc, async (snapshot) => {
+        const data = snapshot.data();
+        if (!pc.currentRemoteDescription && data?.answer) {
+          const answerDescription = new RTCSessionDescription(data.answer);
+          await pc.setRemoteDescription(answerDescription);
+        }
+        if (data?.status === 'ended' || data?.status === 'rejected') {
+          endCall();
+        }
+      });
+
+      // Listen for ICE candidates from receiver
+      onSnapshot(collection(db, 'calls', callDoc.id, 'receiverCandidates'), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            pc.addIceCandidate(new RTCIceCandidate(data));
+          }
+        });
+      });
+
+      // Send local ICE candidates to receiver
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          addDoc(collection(db, 'calls', callDoc.id, 'callerCandidates'), event.candidate.toJSON());
+        }
+      };
+
+    } catch (err) {
+      console.error("Start call failed:", err);
+      showToast("Could not start call: " + err.message, "error");
+    }
+  };
+
+  const joinCall = async (incomingCall) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: incomingCall.type === 'video'
+      });
+      setLocalStream(stream);
+
+      const pc = new RTCPeerConnection(servers);
+      pcRef.current = pc;
+
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+
+      pc.ontrack = (event) => {
+        setRemoteStream(event.streams[0]);
+      };
+
+      const callDoc = doc(db, 'calls', incomingCall.id);
+
+      const offerDescription = new RTCSessionDescription(incomingCall.offer);
+      await pc.setRemoteDescription(offerDescription);
+
+      const answerDescription = await pc.createAnswer();
+      await pc.setLocalDescription(answerDescription);
+
+      const answer = {
+        type: answerDescription.type,
+        sdp: answerDescription.sdp,
+      };
+
+      await updateDoc(callDoc, { answer, status: 'ongoing' });
+      setCall(prev => ({ ...prev, status: 'ongoing' }));
+
+      // Send local ICE candidates to caller
+      pc.onicecandidate = (event) => {
+        if (event.candidate) {
+          addDoc(collection(db, 'calls', incomingCall.id, 'receiverCandidates'), event.candidate.toJSON());
+        }
+      };
+
+      // Listen for ICE candidates from caller
+      onSnapshot(collection(db, 'calls', incomingCall.id, 'callerCandidates'), (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const data = change.doc.data();
+            pc.addIceCandidate(new RTCIceCandidate(data));
+          }
+        });
+      });
+
+      // Listen for call end
+      onSnapshot(callDoc, (snapshot) => {
+        const data = snapshot.data();
+        if (data?.status === 'ended') {
+          endCall();
+        }
+      });
+
+    } catch (err) {
+      console.error("Join call failed:", err);
+      showToast("Could not join call", "error");
+      rejectCall(incomingCall);
+    }
+  };
+
+  const rejectCall = async (incomingCall) => {
+    try {
+      await updateDoc(doc(db, 'calls', incomingCall.id), { status: 'rejected' });
+    } catch (e) { }
+    setCall(null);
+  };
+
+  // Listen for incoming calls
+  useEffect(() => {
+    if (!userData?.email) return;
+    const q = query(
+      collection(db, 'calls'),
+      where('receiver', '==', userData.email),
+      where('status', '==', 'dialing'),
+      limit(1)
+    );
+    return onSnapshot(q, (snap) => {
+      if (!snap.empty && !call) {
+        const doc = snap.docs[0];
+        setCall({ id: doc.id, isIncoming: true, ...doc.data() });
+      }
+    });
+  }, [userData?.email, call]);
+
+  // Video element sync
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream, call]);
+
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream, call]);
+
+  const toggleMic = () => {
+    if (localStream) {
+      localStream.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsMicMuted(!isMicMuted);
+    }
+  };
+
+  const toggleCamera = () => {
+    if (localStream) {
+      localStream.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsCameraOff(!isCameraOff);
+    }
+  };
+
   const forwardToChat = async (targetChat) => {
     if (!forwardItem) return;
 
@@ -1364,8 +1603,18 @@ export default function CoveApp() {
                     </div>
                   );
                 })()}
-                <div className="ml-auto flex items-center justify-end gap-3 relative">
-                  <div className={`flex items-center rounded-full shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-white'} ${chatSearchExpanded ? 'w-[260px] px-4 py-2 opacity-100' : 'w-10 h-10 px-0 opacity-80 hover:opacity-100 cursor-pointer justify-center'}`} onClick={() => { if (!chatSearchExpanded) setChatSearchExpanded(true); }}>
+                <div className="ml-auto flex items-center justify-end gap-2 md:gap-4 relative">
+                  {!activeChat.isGroup && (
+                    <div className="flex items-center gap-1 md:gap-2 mr-2">
+                      <button onClick={() => startCall('audio')} className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>
+                        <Phone size={18} />
+                      </button>
+                      <button onClick={() => startCall('video')} className={`p-2 rounded-full transition-colors ${darkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-slate-50 text-slate-600'}`}>
+                        <Video size={18} />
+                      </button>
+                    </div>
+                  )}
+                  <div className={`flex items-center rounded-full shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-white'} ${chatSearchExpanded ? 'w-[200px] md:w-[260px] px-4 py-2 opacity-100' : 'w-10 h-10 px-0 opacity-80 hover:opacity-100 cursor-pointer justify-center'}`} onClick={() => { if (!chatSearchExpanded) setChatSearchExpanded(true); }}>
                     <Search size={18} className={`shrink-0 transition-all duration-300 ${chatSearchExpanded ? 'opacity-60 mr-3' : 'opacity-100'}`} onClick={(e) => { if (chatSearchExpanded && !chatSearch) { e.stopPropagation(); setChatSearchExpanded(false); updateChatSearch(''); } }} />
 
                     <div className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ${chatSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0'}`}>
@@ -1858,6 +2107,69 @@ export default function CoveApp() {
           background: ${darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'};
         }
       `}</style>
+
+      {/* CALL OVERLAY */}
+      {call && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-4">
+          <div className="w-full max-w-4xl aspect-video bg-black rounded-[40px] overflow-hidden shadow-2xl relative border border-white/10">
+            {/* Remote Stream */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              {call.type === 'video' && remoteStream ? (
+                <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-cover" />
+              ) : (
+                <div className="flex flex-col items-center gap-4">
+                  <div className="w-32 h-32 rounded-full bg-blue-600 flex items-center justify-center text-white text-5xl font-black animate-pulse">
+                    {(call.isIncoming ? call.caller : call.receiver)?.charAt(0).toUpperCase()}
+                  </div>
+                  <p className="text-xl font-bold text-white uppercase tracking-widest">{call.isIncoming ? call.caller.split('@')[0] : call.receiver.split('@')[0]}</p>
+                  <p className="text-blue-400 font-bold animate-pulse uppercase tracking-[0.2em] text-xs">
+                    {call.status === 'dialing' ? 'Dialing...' : call.status === 'ongoing' ? 'Ongoing Call' : 'Connecting...'}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Local Stream (PIP) */}
+            {call.type === 'video' && localStream && (
+              <div className="absolute top-6 right-6 w-32 md:w-48 aspect-video bg-slate-800 rounded-2xl overflow-hidden border-2 border-white/20 shadow-xl z-10">
+                <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover mirror" />
+              </div>
+            )}
+
+            {/* Call Controls */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 md:gap-8 z-20">
+              {call.isIncoming && call.status === 'dialing' ? (
+                <>
+                  <button onClick={() => joinCall(call)} className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all">
+                    <Phone size={28} />
+                  </button>
+                  <button onClick={() => rejectCall(call)} className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all">
+                    <PhoneOff size={28} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button onClick={toggleMic} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${isMicMuted ? 'bg-red-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'}`}>
+                    {isMicMuted ? <MicOff size={24} /> : <Mic size={24} />}
+                  </button>
+                  {call.type === 'video' && (
+                    <button onClick={toggleCamera} className={`w-14 h-14 rounded-full flex items-center justify-center transition-all ${isCameraOff ? 'bg-red-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white border border-white/10'}`}>
+                      {isCameraOff ? <VideoOff size={24} /> : <Video size={24} />}
+                    </button>
+                  )}
+                  <button onClick={endCall} className="w-16 h-16 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all">
+                    <PhoneOff size={28} />
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
+          <style jsx>{`
+            .mirror { transform: rotateY(180deg); }
+          `}</style>
+        </div>
+      )}
     </div>
   );
 }
