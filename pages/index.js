@@ -106,6 +106,16 @@ export default function CoveApp() {
   const remoteVideoRef = useRef(null);
   const [isMicMuted, setIsMicMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
+  const ringtoneRef = useRef(null);
+  const dialtoneRef = useRef(null);
+
+  // Initialize sounds
+  useEffect(() => {
+    ringtoneRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1359/1359-preview.mp3'); // A ringing sound
+    ringtoneRef.current.loop = true;
+    dialtoneRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'); // A dialing sound
+    dialtoneRef.current.loop = true;
+  }, []);
 
   const showToast = (message, type = 'info') => {
     setToast({ message, type });
@@ -1311,6 +1321,51 @@ export default function CoveApp() {
       remoteVideoRef.current.srcObject = remoteStream;
     }
   }, [remoteStream, call]);
+
+  // --- SOUNDS & NOTIFICATIONS ---
+  useEffect(() => {
+    if (!call) {
+      ringtoneRef.current?.pause();
+      dialtoneRef.current?.pause();
+      if (ringtoneRef.current) ringtoneRef.current.currentTime = 0;
+      if (dialtoneRef.current) dialtoneRef.current.currentTime = 0;
+      return;
+    }
+
+    if (call.status === 'dialing') {
+      if (call.isIncoming) {
+        // Incoming call: play ringtone and show notification
+        ringtoneRef.current?.play().catch(() => console.log('Ringtone blocked by browser'));
+
+        if (Notification.permission === 'granted') {
+          const notif = new Notification("Cove Incoming Call", {
+            body: `${call.caller.split('@')[0]} is calling you!`,
+            icon: ASSETS.logoNavy,
+            tag: 'cove-call'
+          });
+          notif.onclick = () => { window.focus(); };
+        }
+      } else {
+        // Outgoing call: play dialtone
+        dialtoneRef.current?.play().catch(() => console.log('Dialtone blocked by browser'));
+      }
+    } else {
+      // Ongoing or ended: stop sounds
+      ringtoneRef.current?.pause();
+      dialtoneRef.current?.pause();
+    }
+  }, [call]);
+
+  // Request notification permission
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      const askPermission = () => {
+        Notification.requestPermission();
+        window.removeEventListener('click', askPermission);
+      };
+      window.addEventListener('click', askPermission);
+    }
+  }, []);
 
   const toggleMic = () => {
     if (localStream) {
