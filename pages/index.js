@@ -405,27 +405,39 @@ export default function CoveApp() {
   const [authLoading, setAuthLoading] = useState(false);
 
   const handleAuth = async () => {
-    // 1. Diagnostic: Check if environment variables are loaded
     if (!firebaseConfig.apiKey) {
-      showToast("Firebase Config missing. Check Vercel Env Vars!", "error");
+      showToast("Config Error: Check Vercel Env Vars", "error");
       return;
     }
-
     if (!email || !email.includes('@')) {
-      showToast("Please enter a valid email address", "error");
+      showToast("Enter a valid email", "error");
       return;
     }
     const cleanEmail = email.toLowerCase().trim();
     setAuthLoading(true);
 
-    try {
-      await signInWithEmailAndPassword(auth, cleanEmail, DUMMY_PW);
-    } catch (err) {
-      console.error("Auth Error Code:", err.code);
+    const PASSWORDS_TO_TRY = [DUMMY_PW, "cove_password_123", "cove_password_safe_123", "password"];
 
-      // 2. Logic: If login fails due to credentials, try finding or creating account
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+    try {
+      // Step 1: Sequential login attempt with common dummy passwords
+      let success = false;
+      for (const pw of PASSWORDS_TO_TRY) {
         try {
+          await signInWithEmailAndPassword(auth, cleanEmail, pw);
+          success = true;
+          break;
+        } catch (e) {
+          if (e.code === 'auth/user-not-found') break; // User doesn't exist, go to Step 2
+          continue; // Try next password
+        }
+      }
+
+      // Step 2: Handle results
+      if (!success) {
+        // Check if user exists but we failed all passwords
+        try {
+          // If we reach here, it means either user not found OR user found but wrong password
+          // Attempting to create will tell us if they exist
           const res = await createUserWithEmailAndPassword(auth, cleanEmail, DUMMY_PW);
           await setDoc(doc(db, 'users', res.user.uid), {
             uid: res.user.uid,
@@ -435,16 +447,15 @@ export default function CoveApp() {
             createdAt: serverTimestamp()
           });
         } catch (signupErr) {
-          console.error("Signup Error Code:", signupErr.code);
           if (signupErr.code === 'auth/email-already-in-use') {
-            showToast("Login failed: credentials mismatch.", "error");
+            showToast("Account exists with a different password. (Old Cove?)", "error");
           } else {
-            showToast("System Error: " + signupErr.code, "error");
+            showToast("Auth Error: " + signupErr.code, "error");
           }
         }
-      } else {
-        showToast("Error: " + (err.code || "Connection failed"), "error");
       }
+    } catch (err) {
+      showToast("System Error: " + err.code, "error");
     } finally {
       setAuthLoading(false);
     }
