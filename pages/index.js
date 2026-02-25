@@ -5,7 +5,7 @@ import {
   createUserWithEmailAndPassword, signOut
 } from 'firebase/auth';
 import {
-  getFirestore, collection, doc, setDoc, onSnapshot, addDoc,
+  getFirestore, collection, doc, setDoc, getDoc, onSnapshot, addDoc,
   query, orderBy, serverTimestamp, updateDoc, where, deleteDoc, getDocs, writeBatch, limit, limitToLast
 } from 'firebase/firestore';
 import {
@@ -462,7 +462,19 @@ export default function CoveApp() {
         showToast("Welcome to Cove!", "success");
       } else {
         // Login Flow
-        await signInWithEmailAndPassword(auth, cleanEmail, password);
+        const res = await signInWithEmailAndPassword(auth, cleanEmail, password);
+        // Ensure user doc exists for profile picture sync
+        const userRef = doc(db, 'users', res.user.uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            uid: res.user.uid,
+            name: cleanEmail.split('@')[0],
+            email: cleanEmail,
+            photoURL: null,
+            createdAt: serverTimestamp()
+          });
+        }
       }
     } catch (err) {
       console.error("Auth Error:", err.code);
@@ -1475,7 +1487,9 @@ export default function CoveApp() {
             <div className="flex gap-2">
               <Users className={`cursor-pointer transition-colors ${darkMode ? 'text-slate-500 hover:text-white' : 'text-slate-300 hover:text-[#00337C]'}`} size={22} onClick={() => setShowGroupModal(true)} title="Create Group" />
               <PlusCircle className={`cursor-pointer transition-colors ${darkMode ? 'text-slate-500 hover:text-white' : 'text-slate-300 hover:text-[#00337C]'}`} onClick={() => setShowInviteModal(true)} title="New Chat" />
-              <Settings className={`cursor-pointer transition-colors ${showSettings ? (darkMode ? 'text-white' : 'text-[#00337C]') : (darkMode ? 'text-slate-500' : 'text-slate-300')}`} onClick={() => setShowSettings(!showSettings)} />
+              {!isMobile && (
+                <Settings className={`cursor-pointer transition-colors ${showSettings ? (darkMode ? 'text-white' : 'text-[#00337C]') : (darkMode ? 'text-slate-500' : 'text-slate-300')}`} onClick={() => setShowSettings(!showSettings)} />
+              )}
             </div>
           </div>
           <div className="relative">
@@ -1585,8 +1599,13 @@ export default function CoveApp() {
       {/* MAIN VIEW / SETTINGS TAB ON MOBILE */}
       <div className={`flex-1 flex flex-col transition-colors relative ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'} ${!showChatWindow && !showSettingsTab ? 'hidden' : 'flex'}`}>
         {showSettings || showSettingsTab ? (
-          <div className="flex-1 p-6 md:p-12 max-w-xl mx-auto w-full overflow-y-auto">
-            <h2 className={`text-2xl md:text-3xl font-black mb-8 ${darkMode ? 'text-white' : 'text-[#00337C]'}`}>Account</h2>
+          <div className="flex-1 p-4 md:p-12 max-w-xl mx-auto w-full overflow-y-auto">
+            {isMobile && (
+              <button onClick={() => { setShowSettings(false); setActiveTab('chats'); }} className={`mb-6 flex items-center gap-2 font-bold transition-colors ${darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-navy'}`}>
+                <ArrowRight size={18} className="rotate-180" /> Back to Chats
+              </button>
+            )}
+            <h2 className={`text-xl md:text-3xl font-black mb-6 md:mb-8 ${darkMode ? 'text-white' : 'text-[#00337C]'}`}>Account Settings</h2>
             <div className={`p-6 md:p-8 rounded-[30px] md:rounded-[40px] shadow-sm space-y-6 ${darkMode ? 'bg-[#111827] border border-white/5' : 'bg-white'}`}>
               <div className="flex flex-col md:flex-row items-center gap-6">
                 <input type="file" ref={profileInputRef} hidden onChange={handleProfileUpdate} accept="image/*" />
