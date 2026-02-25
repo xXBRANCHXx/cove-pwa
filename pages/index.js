@@ -1197,14 +1197,20 @@ export default function CoveApp() {
 
       setCall({ id: callDoc.id, type, caller: userData.email, receiver: receiverEmail, status: 'dialing', isIncoming: false });
 
-      // Listen for answer
+      // Listen for Firestore updates to this call
       onSnapshot(callDoc, async (snapshot) => {
         const data = snapshot.data();
-        if (!pc.currentRemoteDescription && data?.answer) {
+        if (!data) return;
+
+        // Sync local state with Firestore
+        setCall(prev => prev ? { ...prev, ...data } : null);
+
+        if (!pcRef.current.currentRemoteDescription && data.answer) {
           const answerDescription = new RTCSessionDescription(data.answer);
-          await pc.setRemoteDescription(answerDescription);
+          await pcRef.current.setRemoteDescription(answerDescription);
         }
-        if (data?.status === 'ended' || data?.status === 'rejected') {
+
+        if (data.status === 'ended' || data.status === 'rejected') {
           endCall();
         }
       });
@@ -1251,6 +1257,10 @@ export default function CoveApp() {
 
       const callDoc = doc(db, 'calls', incomingCall.id);
 
+      // Immediately update local state to stop ringing
+      setCall(prev => ({ ...prev, status: 'connecting' }));
+      await updateDoc(callDoc, { status: 'connecting' });
+
       const offerDescription = new RTCSessionDescription(incomingCall.offer);
       await pc.setRemoteDescription(offerDescription);
 
@@ -1263,7 +1273,6 @@ export default function CoveApp() {
       };
 
       await updateDoc(callDoc, { answer, status: 'ongoing' });
-      setCall(prev => ({ ...prev, status: 'ongoing' }));
 
       // Send local ICE candidates to caller
       pc.onicecandidate = (event) => {
@@ -1282,17 +1291,22 @@ export default function CoveApp() {
         });
       });
 
-      // Listen for call end
+      // Listen for Firestore updates to this call
       onSnapshot(callDoc, (snapshot) => {
         const data = snapshot.data();
-        if (data?.status === 'ended') {
+        if (!data) return;
+
+        // Keep local state in sync
+        setCall(prev => prev ? { ...prev, ...data } : null);
+
+        if (data.status === 'ended' || data.status === 'rejected') {
           endCall();
         }
       });
 
     } catch (err) {
       console.error("Join call failed:", err);
-      showToast("Could not join call", "error");
+      showToast("Could not join call: " + err.message, "error");
       rejectCall(incomingCall);
     }
   };
