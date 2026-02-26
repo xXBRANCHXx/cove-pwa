@@ -1769,19 +1769,19 @@ export default function CoveApp() {
                         className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
                         title="Voice Call"
                       >
-                        <Phone size={isMobile ? 14 : 20} />
+                        <Phone size={18} />
                       </button>
                       <button
                         onClick={() => { console.log('DEBUG: Video call button clicked'); startCall('video'); }}
                         className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
                         title="Video Call"
                       >
-                        <Video size={isMobile ? 14 : 20} />
+                        <Video size={18} />
                       </button>
                     </div>
                   )}
-                  <div className={`flex items-center rounded-full shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-white'} ${chatSearchExpanded ? 'flex-1 max-w-[150px] md:max-w-[260px] px-2 md:px-4 py-1.5 md:py-2 opacity-100' : 'w-8 h-8 md:w-10 md:h-10 px-0 opacity-80 hover:opacity-100 cursor-pointer justify-center'}`} onClick={() => { if (!chatSearchExpanded) setChatSearchExpanded(true); }}>
-                    <Search size={isMobile ? 14 : 18} className={`shrink-0 transition-all duration-300 ${chatSearchExpanded ? 'opacity-60 mr-2' : 'opacity-100'}`} onClick={(e) => { if (chatSearchExpanded && !chatSearch) { e.stopPropagation(); setChatSearchExpanded(false); updateChatSearch(''); } }} />
+                  <div className={`flex items-center rounded-full shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-white'} ${chatSearchExpanded ? 'flex-1 max-w-[140px] md:max-w-[260px] px-2 md:px-4 py-2 opacity-100' : 'w-9 h-9 md:w-10 md:h-10 px-0 opacity-80 hover:opacity-100 cursor-pointer justify-center'}`} onClick={() => { if (!chatSearchExpanded) setChatSearchExpanded(true); }}>
+                    <Search size={18} className={`shrink-0 transition-all duration-300 ${chatSearchExpanded ? 'opacity-60 mr-2' : 'opacity-100'}`} onClick={(e) => { if (chatSearchExpanded && !chatSearch) { e.stopPropagation(); setChatSearchExpanded(false); updateChatSearch(''); } }} />
 
                     <div className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ${chatSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0'}`}>
                       <input value={chatSearch} onChange={(e) => updateChatSearch(e.target.value)} placeholder="Find in conversation..." className="bg-transparent outline-none text-sm placeholder:opacity-60 w-full" />
@@ -1800,9 +1800,9 @@ export default function CoveApp() {
                     </div>
                   </div>
 
-                  <div className="relative" ref={chatMenuRef}>
-                    <button onClick={() => setShowChatMenu(!showChatMenu)} className={`w-7 h-7 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-white hover:bg-slate-50 text-slate-700'} shadow-sm shrink-0`}>
-                      <MoreVertical size={isMobile ? 14 : 18} />
+                  <div className="relative z-40" ref={chatMenuRef}>
+                    <button onClick={() => setShowChatMenu(!showChatMenu)} className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-white hover:bg-slate-50 text-slate-700'} shadow-sm shrink-0`}>
+                      <MoreVertical size={18} />
                     </button>
                     {showChatMenu && (
                       <div className={`absolute right-0 top-full mt-2 w-56 rounded-2xl shadow-xl z-50 overflow-hidden border backdrop-blur-xl animate-menu-in ${darkMode ? 'bg-[#1e293b]/90 border-white/10' : 'bg-white/90 border-slate-100'}`}>
