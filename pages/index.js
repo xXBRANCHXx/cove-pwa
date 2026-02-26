@@ -1728,9 +1728,9 @@ export default function CoveApp() {
                     return (
                       <div className="flex items-center gap-4 cursor-pointer" onClick={() => setShowGroupInfo(true)}>
                         {activeChat.groupPhoto ? (
-                          <img src={activeChat.groupPhoto} alt={activeChat.groupName} className="w-9 h-9 md:w-12 md:h-12 rounded-xl object-cover" />
+                          <img src={activeChat.groupPhoto} alt={activeChat.groupName} className="w-8 h-8 md:w-12 md:h-12 rounded-xl object-cover" />
                         ) : (
-                          <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl bg-[#00337C] text-white flex items-center justify-center">
+                          <div className="w-8 h-8 md:w-12 md:h-12 rounded-xl bg-[#00337C] text-white flex items-center justify-center">
                             <Users size={20} />
                           </div>
                         )}
@@ -1746,11 +1746,11 @@ export default function CoveApp() {
                   const partnerName = partnerUser?.name || (partnerEmail || '').split('@')[0] || userData?.name?.split(' ')[0];
                   const resolvedPhoto = partnerUser?.photoURL || ((partnerEmail || '').toLowerCase() === userData?.email?.toLowerCase() ? userData?.photoURL : null);
                   return (
-                    <div className="flex items-center gap-2 md:gap-4 truncate">
+                    <div className="flex items-center gap-1 md:gap-4 truncate">
                       {resolvedPhoto ? (
-                        <img src={resolvedPhoto} alt={partnerUser?.name || partnerName} className="w-9 h-9 md:w-12 md:h-12 rounded-xl object-cover" />
+                        <img src={resolvedPhoto} alt={partnerUser?.name || partnerName} className="w-8 h-8 md:w-12 md:h-12 rounded-xl object-cover" />
                       ) : (
-                        <div className="w-9 h-9 md:w-12 md:h-12 rounded-xl bg-[#00337C] text-white flex items-center justify-center font-black text-sm md:text-lg">
+                        <div className="w-8 h-8 md:w-12 md:h-12 rounded-xl bg-[#00337C] text-white flex items-center justify-center font-black text-[10px] md:text-lg">
                           {partnerName?.charAt(0).toUpperCase()}
                         </div>
                       )}
@@ -1766,17 +1766,17 @@ export default function CoveApp() {
                     <div className="flex items-center gap-0.5 md:gap-4 mr-0.5 md:mr-2 relative z-[40]">
                       <button
                         onClick={() => { console.log('DEBUG: Audio call button clicked'); startCall('audio'); }}
-                        className={`w-9 h-9 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
+                        className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
                         title="Voice Call"
                       >
-                        <Phone size={isMobile ? 16 : 20} />
+                        <Phone size={isMobile ? 14 : 20} />
                       </button>
                       <button
                         onClick={() => { console.log('DEBUG: Video call button clicked'); startCall('video'); }}
-                        className={`w-9 h-9 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
+                        className={`w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
                         title="Video Call"
                       >
-                        <Video size={isMobile ? 16 : 20} />
+                        <Video size={isMobile ? 14 : 20} />
                       </button>
                     </div>
                   )}
@@ -1801,8 +1801,8 @@ export default function CoveApp() {
                   </div>
 
                   <div className="relative" ref={chatMenuRef}>
-                    <button onClick={() => setShowChatMenu(!showChatMenu)} className={`w-9 h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-white hover:bg-slate-50 text-slate-700'} shadow-sm`}>
-                      <MoreVertical size={isMobile ? 16 : 18} />
+                    <button onClick={() => setShowChatMenu(!showChatMenu)} className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-white hover:bg-slate-50 text-slate-700'} shadow-sm`}>
+                      <MoreVertical size={isMobile ? 14 : 18} />
                     </button>
                     {showChatMenu && (
                       <div className={`absolute right-0 top-full mt-2 w-56 rounded-2xl shadow-xl z-50 overflow-hidden border backdrop-blur-xl animate-menu-in ${darkMode ? 'bg-[#1e293b]/90 border-white/10' : 'bg-white/90 border-slate-100'}`}>
@@ -1903,7 +1903,7 @@ export default function CoveApp() {
                           {msg.senderEmail === userData.email && msg.id && <button onClick={() => startEditMessage(msg)} title="Edit" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-yellow-400 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><MoreVertical size={14} /></button>}
                           {msg.senderEmail === userData.email && msg.id && <button onClick={() => deleteMessageWithConfirm(msg.id)} className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-red-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><Trash2 size={14} /></button>}
                         </div>
-                        <div className={`p-4 rounded-[24px] shadow-sm transition-all duration-200 hover:shadow-md ${msg.senderEmail === userData.email ? 'bg-gradient-to-br from-[#00337C] to-[#002a66] text-white rounded-tr-none' : darkMode ? 'bg-[#1e293b]/80 backdrop-blur-sm text-white rounded-tl-none border border-white/5' : 'bg-white/90 backdrop-blur-sm text-slate-800 rounded-tl-none border border-slate-100/50'}`}>
+                        <div className={`p-3 md:p-4 rounded-[24px] shadow-sm transition-all duration-200 hover:shadow-md ${msg.senderEmail === userData.email ? 'bg-gradient-to-br from-[#00337C] to-[#002a66] text-white rounded-tr-none' : darkMode ? 'bg-[#1e293b]/80 backdrop-blur-sm text-white rounded-tl-none border border-white/5' : 'bg-white/90 backdrop-blur-sm text-slate-800 rounded-tl-none border border-slate-100/50'}`}>
                           {isGroupChat && !isOwnMessage && (
                             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${darkMode ? 'text-blue-400' : 'text-[#00337C]'}`}>{senderName}</p>
                           )}
@@ -1919,7 +1919,7 @@ export default function CoveApp() {
                                 </div>
                               )}
                               {msg.fileType === 'image' ? (
-                                <img onClick={() => { if (msg.status !== 'uploading') { pauseAllMediaInMessages(); setMediaModal({ url: msg.fileUrl, type: 'image', text: msg.text }); } }} src={msg.fileUrl} className={`cursor-pointer w-full md:w-auto md:max-w-full max-h-[360px] h-auto rounded-xl border border-white/10 shadow-sm object-contain transition-opacity ${msg.status === 'uploading' ? 'opacity-30 grayscale' : 'opacity-100'}`} alt="attachment" />
+                                <img onClick={() => { if (msg.status !== 'uploading') { pauseAllMediaInMessages(); setMediaModal({ url: msg.fileUrl, type: 'image', text: msg.text }); } }} src={msg.fileUrl} className={`cursor-pointer w-full md:w-auto md:max-w-full max-h-[300px] h-auto rounded-xl border border-white/10 shadow-sm object-contain transition-opacity ${msg.status === 'uploading' ? 'opacity-30 grayscale' : 'opacity-100'}`} alt="attachment" />
                               ) : msg.fileType === 'audio' ? (
                                 <audio src={msg.fileUrl} controls className="w-full" />
                               ) : msg.fileType === 'video' ? (
@@ -1932,11 +1932,11 @@ export default function CoveApp() {
                                   )}
                                 </div>
                               ) : (
-                                <a href={msg.status === 'uploading' ? '#' : msg.fileUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${darkMode ? 'bg-black/20 hover:bg-black/40' : 'bg-black/10 hover:bg-black/20'} ${msg.status === 'uploading' ? 'cursor-wait opacity-50' : ''}`}>
-                                  <FileText size={20} />
+                                <a href={msg.status === 'uploading' ? '#' : msg.fileUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-2 p-1.5 rounded-xl transition-colors ${darkMode ? 'bg-black/20 hover:bg-black/40' : 'bg-black/10 hover:bg-black/20'} ${msg.status === 'uploading' ? 'cursor-wait opacity-50' : ''}`}>
+                                  <FileText size={16} className="shrink-0" />
                                   <div className="flex-1 overflow-hidden">
                                     <p className="text-xs font-bold truncate">{msg.text}</p>
-                                    <p className="text-[10px] opacity-60 uppercase">{msg.status === 'uploading' ? 'Uploading...' : 'Click to view'}</p>
+                                    <p className="text-[10px] opacity-60 uppercase">{msg.status === 'uploading' ? 'Uploading' : 'View File'}</p>
                                   </div>
                                 </a>
                               )}
@@ -2029,10 +2029,10 @@ export default function CoveApp() {
                   </div>
                 )}
                 <input type="file" ref={chatFileInputRef} hidden multiple onChange={handleChatFileUpload} />
-                <button onClick={() => chatFileInputRef.current.click()} className="p-1 md:p-3 text-slate-400 hover:text-blue-400 shrink-0"><Paperclip size={isMobile ? 16 : 20} /></button>
-                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-1 md:p-3 text-slate-400 hover:text-blue-400 shrink-0"><Smile size={isMobile ? 16 : 20} /></button>
-                <button onClick={() => isRecording ? stopRecording() : startRecording()} className={`p-1 md:p-3 shrink-0 ${isRecording ? 'text-red-400' : 'text-slate-400'} hover:text-blue-400`} title={isRecording ? 'Stop recording' : 'Start recording'}>
-                  <Mic size={isMobile ? 16 : 20} />
+                <button onClick={() => chatFileInputRef.current.click()} className="p-0.5 md:p-3 text-slate-400 hover:text-blue-400 shrink-0"><Paperclip size={isMobile ? 14 : 20} /></button>
+                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-0.5 md:p-3 text-slate-400 hover:text-blue-400 shrink-0"><Smile size={isMobile ? 14 : 20} /></button>
+                <button onClick={() => isRecording ? stopRecording() : startRecording()} className={`p-0.5 md:p-3 shrink-0 ${isRecording ? 'text-red-400' : 'text-slate-400'} hover:text-blue-400`} title={isRecording ? 'Stop recording' : 'Start recording'}>
+                  <Mic size={isMobile ? 14 : 20} />
                 </button>
 
                 {showEmojiPicker && (
@@ -2080,7 +2080,7 @@ export default function CoveApp() {
                   }}
                   onPaste={handlePaste}
                 />
-                <button onClick={() => sendMessage()} disabled={isSending || uploading} className={`p-3 md:p-4 ${isSending || uploading ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-br from-[#00337C] to-[#0055A4] hover:shadow-blue-900/30 hover:shadow-xl'} text-white rounded-[20px] active:scale-90 transition-all duration-200 shadow-md`}><Send size={isMobile ? 16 : 18} /></button>
+                <button onClick={() => sendMessage()} disabled={isSending || uploading} className={`p-3 md:p-4 ${isSending || uploading ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-br from-[#00337C] to-[#0055A4] hover:shadow-blue-900/30 hover:shadow-xl'} text-white rounded-[20px] active:scale-90 transition-all duration-200 shadow-md`}><Send size={isMobile ? 14 : 18} /></button>
               </div>
             </div>
           </div>
