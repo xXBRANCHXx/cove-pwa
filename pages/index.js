@@ -1715,8 +1715,8 @@ export default function CoveApp() {
           </div>
         ) : activeChat ? (
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-            <div className={`p-2 md:p-6 border-b flex items-center justify-between transition-all duration-300 z-30 relative safe-px safe-p-top overflow-hidden max-w-full ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'}`}>
-              <div className="flex items-center gap-1 md:gap-6 w-full overflow-hidden">
+            <div className={`p-2 border-b flex items-center justify-between transition-all duration-300 z-30 relative overflow-hidden max-w-full ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'}`}>
+              <div className="flex items-center gap-1 md:gap-4 flex-1 min-w-0 overflow-hidden">
                 {isMobile && (
                   <button onClick={() => setActiveChat(null)} className={`p-2 rounded-full ${darkMode ? 'bg-white/5 text-white' : 'bg-slate-50 text-slate-500'}`}>
                     <ArrowRight size={20} className="rotate-180" />
@@ -1801,7 +1801,7 @@ export default function CoveApp() {
                   </div>
 
                   <div className="relative" ref={chatMenuRef}>
-                    <button onClick={() => setShowChatMenu(!showChatMenu)} className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-white hover:bg-slate-50 text-slate-700'} shadow-sm`}>
+                    <button onClick={() => setShowChatMenu(!showChatMenu)} className={`w-7 h-7 md:w-10 md:h-10 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-white hover:bg-slate-50 text-slate-700'} shadow-sm shrink-0`}>
                       <MoreVertical size={isMobile ? 14 : 18} />
                     </button>
                     {showChatMenu && (
@@ -1859,7 +1859,7 @@ export default function CoveApp() {
               onDragOver={handleDragOver}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
-              className="flex-1 overflow-y-auto overflow-x-hidden p-0 md:p-8 space-y-6 relative flex flex-col safe-pre-px"
+              className="flex-1 overflow-y-auto overflow-x-hidden space-y-6 relative flex flex-col"
             >
               {hasMoreMessages && (
                 <div className="flex justify-center py-4 relative z-10">
@@ -1884,7 +1884,7 @@ export default function CoveApp() {
                   const senderName = senderUser?.name || (msg.senderEmail || '').split('@')[0];
                   const senderPhoto = senderUser?.photoURL || null;
                   return (
-                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex max-w-full gap-2 relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'self-end' : 'self-start'}`}>
+                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex w-full px-4 md:px-8 gap-2 relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                       {isGroupChat && !isOwnMessage && (
                         <div className="flex flex-col justify-end pb-1">
                           {senderPhoto ? (
@@ -1903,7 +1903,7 @@ export default function CoveApp() {
                           {msg.senderEmail === userData.email && msg.id && <button onClick={() => startEditMessage(msg)} title="Edit" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-yellow-400 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><MoreVertical size={14} /></button>}
                           {msg.senderEmail === userData.email && msg.id && <button onClick={() => deleteMessageWithConfirm(msg.id)} className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-red-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><Trash2 size={14} /></button>}
                         </div>
-                        <div className={`p-3 md:p-4 rounded-[24px] shadow-sm transition-all duration-200 hover:shadow-md ${msg.senderEmail === userData.email ? 'bg-gradient-to-br from-[#00337C] to-[#002a66] text-white rounded-tr-none' : darkMode ? 'bg-[#1e293b]/80 backdrop-blur-sm text-white rounded-tl-none border border-white/5' : 'bg-white/90 backdrop-blur-sm text-slate-800 rounded-tl-none border border-slate-100/50'}`}>
+                        <div className={`p-2.5 md:p-4 rounded-[22px] shadow-sm transition-all duration-200 hover:shadow-md ${msg.senderEmail === userData.email ? 'bg-gradient-to-br from-[#00337C] to-[#002a66] text-white rounded-tr-none' : darkMode ? 'bg-[#1e293b]/80 backdrop-blur-sm text-white rounded-tl-none border border-white/5' : 'bg-white/90 backdrop-blur-sm text-slate-800 rounded-tl-none border border-slate-100/50'}`}>
                           {isGroupChat && !isOwnMessage && (
                             <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${darkMode ? 'text-blue-400' : 'text-[#00337C]'}`}>{senderName}</p>
                           )}
@@ -1932,8 +1932,10 @@ export default function CoveApp() {
                                   )}
                                 </div>
                               ) : (
-                                <a href={msg.status === 'uploading' ? '#' : msg.fileUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-2 p-1.5 rounded-xl transition-colors ${darkMode ? 'bg-black/20 hover:bg-black/40' : 'bg-black/10 hover:bg-black/20'} ${msg.status === 'uploading' ? 'cursor-wait opacity-50' : ''}`}>
-                                  <FileText size={16} className="shrink-0" />
+                                <a href={msg.status === 'uploading' ? '#' : msg.fileUrl} target="_blank" rel="noreferrer" className={`flex items-center gap-2 p-0.5 rounded-xl transition-colors ${darkMode ? 'bg-black/20 hover:bg-black/40' : 'bg-black/10 hover:bg-black/20'} ${msg.status === 'uploading' ? 'cursor-wait opacity-50' : ''}`}>
+                                  <div className="p-0.5">
+                                    <FileText size={14} className="shrink-0" />
+                                  </div>
                                   <div className="flex-1 overflow-hidden">
                                     <p className="text-xs font-bold truncate">{msg.text}</p>
                                     <p className="text-[10px] opacity-60 uppercase">{msg.status === 'uploading' ? 'Uploading' : 'View File'}</p>
@@ -1974,7 +1976,7 @@ export default function CoveApp() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className={`p-2 md:p-4 pb-4 md:pb-8 relative z-10 safe-px safe-p-bottom max-w-full ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
+            <div className={`px-2 md:px-8 py-2 md:py-4 pb-4 md:pb-8 relative z-10 safe-p-bottom w-full ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
               {replyTo && (
                 <div className={`max-w-4xl mx-auto mb-2 p-3 border-l-4 rounded-xl flex justify-between items-center ${darkMode ? 'bg-blue-500/10 border-blue-500' : 'bg-blue-50 border-[#00337C]'}`}>
                   <p className={`text-xs font-bold ${darkMode ? 'text-blue-300' : 'text-[#00337C]'}`}>Replying to: <span className="font-normal opacity-70 truncate max-w-[200px]">{replyTo.text}</span></p>
@@ -2067,7 +2069,7 @@ export default function CoveApp() {
                 )}
 
                 <input
-                  className={`flex-1 min-w-0 p-2 outline-none font-bold text-sm bg-transparent ${darkMode ? 'text-white placeholder:text-slate-500' : 'text-slate-900'}`}
+                  className={`flex-1 min-w-0 px-2 outline-none font-bold text-sm bg-transparent ${darkMode ? 'text-white placeholder:text-slate-500' : 'text-slate-900'}`}
                   placeholder={uploading ? "Uploading..." : "Type a message..."}
                   value={messageInput}
                   disabled={uploading || isSending}
