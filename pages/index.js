@@ -135,7 +135,12 @@ export default function CoveApp() {
     };
     document.addEventListener("mousedown", handleClickOutside);
 
-    const checkSize = () => setIsMobile(window.innerWidth < 1024);
+    const checkSize = () => {
+      setIsMobile(window.innerWidth < 1024);
+      // Force a re-calc of vh for mobile browsers
+      let vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
     checkSize();
     window.addEventListener('resize', checkSize);
 
@@ -324,7 +329,6 @@ export default function CoveApp() {
       if (newMessages.length < messagesLimit) {
         setHasMoreMessages(false);
       }
-
       setMessages(newMessages);
 
       // Scroll handling
@@ -1710,9 +1714,9 @@ export default function CoveApp() {
             </div>
           </div>
         ) : activeChat ? (
-          <>
-            <div className={`p-4 md:p-6 border-b flex items-center justify-between transition-all duration-300 z-30 relative safe-px safe-p-top ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'}`}>
-              <div className="flex items-center gap-3 md:gap-6 w-full">
+          <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+            <div className={`p-3 md:p-6 border-b flex items-center justify-between transition-all duration-300 z-30 relative safe-px safe-p-top overflow-hidden max-w-full ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'}`}>
+              <div className="flex items-center gap-2 md:gap-6 w-full overflow-hidden">
                 {isMobile && (
                   <button onClick={() => setActiveChat(null)} className={`p-2 rounded-full ${darkMode ? 'bg-white/5 text-white' : 'bg-slate-50 text-slate-500'}`}>
                     <ArrowRight size={20} className="rotate-180" />
@@ -1750,16 +1754,16 @@ export default function CoveApp() {
                           {partnerName?.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <div>
-                        <p className={`font-black text-base uppercase tracking-wider ${darkMode ? 'text-white' : 'text-[#00337C]'}`}>{partnerUser?.name || partnerName}</p>
-                        <p className="text-xs opacity-60">{partnerEmail}</p>
+                      <div className="min-w-0">
+                        <p className={`font-black text-sm md:text-base uppercase tracking-wider truncate ${darkMode ? 'text-white' : 'text-[#00337C]'}`}>{partnerUser?.name || partnerName}</p>
+                        {!isMobile && <p className="text-xs opacity-60 truncate">{partnerEmail}</p>}
                       </div>
                     </div>
                   );
                 })()}
-                <div className="ml-auto flex items-center justify-end gap-2 md:gap-4 relative">
+                <div className="ml-auto flex items-center justify-end gap-1 md:gap-4 relative shrink-0">
                   {!activeChat.isGroup && (
-                    <div className="flex items-center gap-2 md:gap-4 mr-2 relative z-[40]">
+                    <div className="flex items-center gap-1 md:gap-4 mr-1 md:mr-2 relative z-[40]">
                       <button
                         onClick={() => { console.log('DEBUG: Audio call button clicked'); startCall('audio'); }}
                         className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full transition-all active:scale-90 cursor-pointer ${darkMode ? 'bg-white/5 hover:bg-white/10 text-blue-400' : 'bg-slate-50 hover:bg-slate-100 text-[#00337C]'} border ${darkMode ? 'border-white/5' : 'border-slate-100'}`}
@@ -1970,7 +1974,7 @@ export default function CoveApp() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className={`p-4 md:p-6 pb-6 md:pb-8 relative z-10 safe-px safe-p-bottom ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
+            <div className={`p-2 md:p-6 pb-4 md:pb-8 relative z-10 safe-px safe-p-bottom max-w-full overflow-hidden ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
               {replyTo && (
                 <div className={`max-w-4xl mx-auto mb-2 p-3 border-l-4 rounded-xl flex justify-between items-center ${darkMode ? 'bg-blue-500/10 border-blue-500' : 'bg-blue-50 border-[#00337C]'}`}>
                   <p className={`text-xs font-bold ${darkMode ? 'text-blue-300' : 'text-[#00337C]'}`}>Replying to: <span className="font-normal opacity-70 truncate max-w-[200px]">{replyTo.text}</span></p>
@@ -2025,10 +2029,10 @@ export default function CoveApp() {
                   </div>
                 )}
                 <input type="file" ref={chatFileInputRef} hidden multiple onChange={handleChatFileUpload} />
-                <button onClick={() => chatFileInputRef.current.click()} className="p-3 text-slate-400 hover:text-blue-400"><Paperclip size={20} /></button>
-                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-3 text-slate-400 hover:text-blue-400"><Smile size={20} /></button>
-                <button onClick={() => isRecording ? stopRecording() : startRecording()} className={`p-3 ${isRecording ? 'text-red-400' : 'text-slate-400'} hover:text-blue-400`} title={isRecording ? 'Stop recording' : 'Start recording'}>
-                  <Mic size={20} />
+                <button onClick={() => chatFileInputRef.current.click()} className="p-2 md:p-3 text-slate-400 hover:text-blue-400 shrink-0"><Paperclip size={isMobile ? 18 : 20} /></button>
+                <button onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="p-2 md:p-3 text-slate-400 hover:text-blue-400 shrink-0"><Smile size={isMobile ? 18 : 20} /></button>
+                <button onClick={() => isRecording ? stopRecording() : startRecording()} className={`p-2 md:p-3 shrink-0 ${isRecording ? 'text-red-400' : 'text-slate-400'} hover:text-blue-400`} title={isRecording ? 'Stop recording' : 'Start recording'}>
+                  <Mic size={isMobile ? 18 : 20} />
                 </button>
 
                 {showEmojiPicker && (
@@ -2079,7 +2083,7 @@ export default function CoveApp() {
                 <button onClick={() => sendMessage()} disabled={isSending || uploading} className={`p-4 ${isSending || uploading ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-br from-[#00337C] to-[#0055A4] hover:shadow-blue-900/30 hover:shadow-xl'} text-white rounded-[20px] active:scale-90 transition-all duration-200 shadow-lg`}><Send size={18} /></button>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center select-none safe-px">
             <img src={darkMode ? ASSETS.logoNameWhite : ASSETS.logoNameNavy} alt="Cove Logo" className="w-[280px] mb-6 opacity-15 transition-all duration-500" />
