@@ -1494,7 +1494,7 @@ export default function CoveApp() {
 
   if (!user) {
     return (
-      <div className={`fixed inset-0 flex items-center justify-center p-4 transition-colors duration-500 ${darkMode ? 'bg-[#0f172a]' : 'bg-slate-50'}`}>
+      <div className={`fixed inset-0 h-[100dvh] flex items-center justify-center p-4 transition-colors duration-500 ${darkMode ? 'bg-[#0f172a]' : 'bg-slate-50'}`}>
         <div className={`p-10 rounded-[40px] w-full max-w-sm shadow-2xl border transition-all duration-300 ${darkMode ? 'bg-slate-900 border-white/10' : 'bg-white border-slate-100'} flex flex-col items-center relative z-10`}>
           <img src={darkMode ? ASSETS.logoNameWhite : ASSETS.logoNameNavy} alt="Cove Messenger" className="h-20 object-contain mb-12" />
 
@@ -1545,7 +1545,7 @@ export default function CoveApp() {
   const showSettingsTab = isMobile && activeTab === 'settings' && !activeChat;
 
   return (
-    <div className={`fixed inset-0 flex overflow-hidden ${darkMode ? 'bg-[#0a0f1e] text-white' : 'bg-white text-slate-900'}`}>
+    <div className={`fixed inset-0 h-[100dvh] flex overflow-hidden ${darkMode ? 'bg-[#0a0f1e] text-white' : 'bg-white text-slate-900'}`}>
       <Head>
         <title>Cove | Secure Private Messaging</title>
         <meta name="description" content="Secure, private, and fast communication with Cove Messenger." />
@@ -1554,14 +1554,14 @@ export default function CoveApp() {
       </Head>
 
       {/* SIDEBAR / CONVO LIST */}
-      <div className={`${isMobile ? 'w-full' : 'w-[350px]'} flex flex-col border-r ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'} ${!showConvoList ? 'hidden' : 'flex'}`}>
-        <div className="p-6 safe-px">
+      <div className={`${isMobile ? 'w-full' : 'w-[350px]'} h-full flex flex-col border-r ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'} ${!showConvoList ? 'hidden' : 'flex'}`}>
+        <div className="p-6 safe-px safe-p-top">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
               <img
                 src={darkMode ? ASSETS.logoNameWhite : ASSETS.logoNameNavy}
                 alt="Cove"
-                className="h-8 object-contain"
+                className="h-10 md:h-8 object-contain"
               />
             </div>
             <div className="flex gap-2">
@@ -1711,7 +1711,7 @@ export default function CoveApp() {
           </div>
         ) : activeChat ? (
           <>
-            <div className={`p-4 md:p-6 border-b flex items-center justify-between transition-all duration-300 z-30 relative safe-px ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'}`}>
+            <div className={`p-4 md:p-6 border-b flex items-center justify-between transition-all duration-300 z-30 relative safe-px safe-p-top ${darkMode ? 'bg-[#111827] border-white/5' : 'bg-white border-slate-100'}`}>
               <div className="flex items-center gap-3 md:gap-6 w-full">
                 {isMobile && (
                   <button onClick={() => setActiveChat(null)} className={`p-2 rounded-full ${darkMode ? 'bg-white/5 text-white' : 'bg-slate-50 text-slate-500'}`}>
@@ -1855,7 +1855,7 @@ export default function CoveApp() {
               onDragOver={handleDragOver}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
-              className="flex-1 overflow-y-auto p-8 space-y-6 relative"
+              className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 relative"
             >
               {hasMoreMessages && (
                 <div className="flex justify-center py-4 relative z-10">
@@ -1970,7 +1970,7 @@ export default function CoveApp() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className={`p-4 md:p-6 pb-6 md:pb-8 relative z-10 safe-px ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
+            <div className={`p-4 md:p-6 pb-6 md:pb-8 relative z-10 safe-px safe-p-bottom ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
               {replyTo && (
                 <div className={`max-w-4xl mx-auto mb-2 p-3 border-l-4 rounded-xl flex justify-between items-center ${darkMode ? 'bg-blue-500/10 border-blue-500' : 'bg-blue-50 border-[#00337C]'}`}>
                   <p className={`text-xs font-bold ${darkMode ? 'text-blue-300' : 'text-[#00337C]'}`}>Replying to: <span className="font-normal opacity-70 truncate max-w-[200px]">{replyTo.text}</span></p>
