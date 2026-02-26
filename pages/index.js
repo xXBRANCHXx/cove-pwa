@@ -1859,7 +1859,7 @@ export default function CoveApp() {
               onDragOver={handleDragOver}
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
-              className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 space-y-6 relative flex flex-col safe-px"
+              className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 space-y-6 relative flex flex-col safe-pre-px"
             >
               {hasMoreMessages && (
                 <div className="flex justify-center py-4 relative z-10">
@@ -1884,7 +1884,7 @@ export default function CoveApp() {
                   const senderName = senderUser?.name || (msg.senderEmail || '').split('@')[0];
                   const senderPhoto = senderUser?.photoURL || null;
                   return (
-                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex max-w-full gap-3 relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'self-end' : 'self-start'}`}>
+                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex max-w-full gap-3 relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'self-end mr-1' : 'self-start ml-1'}`}>
                       {isGroupChat && !isOwnMessage && (
                         <div className="flex flex-col justify-end pb-1">
                           {senderPhoto ? (
@@ -1896,7 +1896,7 @@ export default function CoveApp() {
                           )}
                         </div>
                       )}
-                      <div className={`group relative max-w-[80%] md:max-w-[70%] ${isOwnMessage ? 'flex flex-col items-end' : ''}`}>
+                      <div className={`group relative max-w-[78%] md:max-w-[70%] ${isOwnMessage ? 'flex flex-col items-end' : ''}`}>
                         <div className={`absolute -top-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isOwnMessage ? 'right-0' : 'left-0'}`}>
                           <button onClick={() => setForwardItem(msg)} title="Forward" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-green-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><ArrowRight size={14} /></button>
                           <button onClick={() => setReplyTo(msg)} title="Reply" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-blue-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><Reply size={14} /></button>
@@ -1974,7 +1974,7 @@ export default function CoveApp() {
               <div ref={messagesEndRef} />
             </div>
 
-            <div className={`p-2 md:p-6 pb-4 md:pb-8 relative z-10 safe-px safe-p-bottom max-w-full overflow-hidden ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
+            <div className={`p-4 pb-6 md:pb-8 relative z-10 safe-px safe-p-bottom max-w-full ${darkMode ? 'bg-[#0a0f1e]' : 'bg-[#F8FAFC]'}`}>
               {replyTo && (
                 <div className={`max-w-4xl mx-auto mb-2 p-3 border-l-4 rounded-xl flex justify-between items-center ${darkMode ? 'bg-blue-500/10 border-blue-500' : 'bg-blue-50 border-[#00337C]'}`}>
                   <p className={`text-xs font-bold ${darkMode ? 'text-blue-300' : 'text-[#00337C]'}`}>Replying to: <span className="font-normal opacity-70 truncate max-w-[200px]">{replyTo.text}</span></p>
@@ -2080,7 +2080,7 @@ export default function CoveApp() {
                   }}
                   onPaste={handlePaste}
                 />
-                <button onClick={() => sendMessage()} disabled={isSending || uploading} className={`p-4 ${isSending || uploading ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-br from-[#00337C] to-[#0055A4] hover:shadow-blue-900/30 hover:shadow-xl'} text-white rounded-[20px] active:scale-90 transition-all duration-200 shadow-lg`}><Send size={18} /></button>
+                <button onClick={() => sendMessage()} disabled={isSending || uploading} className={`p-3 md:p-4 ${isSending || uploading ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-br from-[#00337C] to-[#0055A4] hover:shadow-blue-900/30 hover:shadow-xl'} text-white rounded-[20px] active:scale-90 transition-all duration-200 shadow-md`}><Send size={isMobile ? 16 : 18} /></button>
               </div>
             </div>
           </div>
