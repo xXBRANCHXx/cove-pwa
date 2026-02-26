@@ -1780,8 +1780,8 @@ export default function CoveApp() {
                       </button>
                     </div>
                   )}
-                  <div className={`flex items-center rounded-full shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-white'} ${chatSearchExpanded ? 'w-[200px] md:w-[260px] px-4 py-2 opacity-100' : 'w-10 h-10 px-0 opacity-80 hover:opacity-100 cursor-pointer justify-center'}`} onClick={() => { if (!chatSearchExpanded) setChatSearchExpanded(true); }}>
-                    <Search size={18} className={`shrink-0 transition-all duration-300 ${chatSearchExpanded ? 'opacity-60 mr-3' : 'opacity-100'}`} onClick={(e) => { if (chatSearchExpanded && !chatSearch) { e.stopPropagation(); setChatSearchExpanded(false); updateChatSearch(''); } }} />
+                  <div className={`flex items-center rounded-full shadow-sm transition-all duration-300 ease-in-out overflow-hidden ${darkMode ? 'bg-white/5' : 'bg-white'} ${chatSearchExpanded ? 'flex-1 max-w-[150px] md:max-w-[260px] px-2 md:px-4 py-1.5 md:py-2 opacity-100' : 'w-8 h-8 md:w-10 md:h-10 px-0 opacity-80 hover:opacity-100 cursor-pointer justify-center'}`} onClick={() => { if (!chatSearchExpanded) setChatSearchExpanded(true); }}>
+                    <Search size={isMobile ? 14 : 18} className={`shrink-0 transition-all duration-300 ${chatSearchExpanded ? 'opacity-60 mr-2' : 'opacity-100'}`} onClick={(e) => { if (chatSearchExpanded && !chatSearch) { e.stopPropagation(); setChatSearchExpanded(false); updateChatSearch(''); } }} />
 
                     <div className={`flex items-center gap-2 overflow-hidden transition-all duration-300 ${chatSearchExpanded ? 'w-full opacity-100' : 'w-0 opacity-0'}`}>
                       <input value={chatSearch} onChange={(e) => updateChatSearch(e.target.value)} placeholder="Find in conversation..." className="bg-transparent outline-none text-sm placeholder:opacity-60 w-full" />
