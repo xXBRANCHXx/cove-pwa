@@ -25,12 +25,8 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
-const CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
-// Use explicit image/upload endpoint for unsigned uploads
-const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+const WORKER_URL = process.env.NEXT_PUBLIC_STORAGE_WORKER_URL;
 
-// NOTE: client requests a server-side signature from `/api/cloudinary-sign`.
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -230,7 +226,7 @@ export default function CoveApp() {
     setUploadError(null);
     setUploading(true);
     try {
-      const url = await uploadFileToCloudinary(target.file);
+      const url = await uploadFileToStorage(target.file);
       setPendingAttachments(prev => prev.map((p, i) => i === index ? { ...p, uploadedUrl: url } : p));
     } catch (err) {
       console.error('Retry upload failed', err);
@@ -802,7 +798,7 @@ export default function CoveApp() {
   const updateGroupPhoto = async (chatId, file) => {
     if (!file || !chatId) return;
     try {
-      const url = await uploadFileToCloudinary(file);
+      const url = await uploadFileToStorage(file);
       if (url) {
         await updateDoc(doc(db, 'contacts', chatId), { groupPhoto: url });
         showToast('Group photo updated', 'success');
@@ -989,45 +985,29 @@ export default function CoveApp() {
     }
   };
 
-  const uploadFileToCloudinary = async (file) => {
-    // Request a server-side signature for the upload (secure)
-    let signResp = null;
-    try {
-      const r = await fetch('/api/cloudinary-sign', { method: 'POST' });
-      if (!r.ok) {
-        const txt = await r.text();
-        throw new Error(`Signature request failed: ${r.status} ${txt}`);
-      }
-      signResp = await r.json();
-    } catch (err) {
-      console.error('Failed to obtain Cloudinary signature:', err);
-      throw err;
+  const uploadFileToStorage = async (file) => {
+    if (!WORKER_URL || WORKER_URL.includes('your-worker-subdomain')) {
+      throw new Error("Storage Worker URL not configured in .env.local");
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', signResp.upload_preset || UPLOAD_PRESET);
-    formData.append('timestamp', signResp.timestamp);
-    formData.append('signature', signResp.signature);
-    formData.append('api_key', signResp.api_key);
+    const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
 
-    // Choose resource type / endpoint based on file mime type
-    let resourceType = 'auto';
-    if (file && file.type) {
-      if (file.type.startsWith('image')) resourceType = 'image';
-      else if (file.type.startsWith('video')) resourceType = 'video';
-      else if (file.type.startsWith('audio')) resourceType = 'raw'; // Cloudinary often stores audio as raw
-      else resourceType = 'raw';
-    }
+    const res = await fetch(`${WORKER_URL}/upload`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-Filename': filename
+      },
+      body: file
+    });
 
-    const uploadUrl = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`;
-    const res = await fetch(uploadUrl, { method: 'POST', body: formData });
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Upload failed (${uploadUrl}): ${res.status} ${text}`);
+      throw new Error(`Upload failed: ${res.status} ${text}`);
     }
+
     const data = await res.json();
-    return data.secure_url || data.url || null;
+    return data.url;
   };
 
   const sendMessage = async (dataOverride = null) => {
@@ -1070,7 +1050,7 @@ export default function CoveApp() {
           const att = currentAttachments[i];
           if (!att.uploadedUrl && att.file) {
             try {
-              const fileUrl = await uploadFileToCloudinary(att.file);
+              const fileUrl = await uploadFileToStorage(att.file);
               att.uploadedUrl = fileUrl;
               // update status in optimistic
               setOptimisticMessages(prev => prev.map(m => m.fileUrl === att.previewUrl ? { ...m, status: 'sending' } : m));

@@ -1,0 +1,9 @@
+name = "cove-pwa-storage"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+B2_KEY_ID = "005f812792503b50000000001"
+# B2_APPLICATION_KEY should be set as a secret: wrangler secret put B2_APPLICATION_KEY
+B2_BUCKET_ID = "YOUR_BUCKET_ID_HERE"
+B2_BUCKET_NAME = "cove-pwa-storage"
