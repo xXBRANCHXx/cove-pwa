@@ -1880,7 +1880,7 @@ export default function CoveApp() {
                   const senderName = senderUser?.name || (msg.senderEmail || '').split('@')[0];
                   const senderPhoto = senderUser?.photoURL || null;
                   return (
-                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex gap-3 relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                    <div key={msg.id || msg.tempId || i} ref={el => messagesRefs.current[i] = el} className={`flex w-full gap-3 relative z-10 ${!msg.id && msg.tempId ? 'animate-msg-in' : ''} ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
                       {isGroupChat && !isOwnMessage && (
                         <div className="flex flex-col justify-end pb-1">
                           {senderPhoto ? (
@@ -1892,7 +1892,7 @@ export default function CoveApp() {
                           )}
                         </div>
                       )}
-                      <div className={`group relative max-w-[70%] ${isOwnMessage ? 'flex flex-col items-end' : ''}`}>
+                      <div className={`group relative max-w-[85%] md:max-w-[70%] ${isOwnMessage ? 'flex flex-col items-end' : ''}`}>
                         <div className={`absolute -top-8 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity ${isOwnMessage ? 'right-0' : 'left-0'}`}>
                           <button onClick={() => setForwardItem(msg)} title="Forward" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-green-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><ArrowRight size={14} /></button>
                           <button onClick={() => setReplyTo(msg)} title="Reply" className={`p-1.5 rounded-full shadow-sm text-slate-400 hover:text-blue-500 ${darkMode ? 'bg-slate-800' : 'bg-white'}`}><Reply size={14} /></button>

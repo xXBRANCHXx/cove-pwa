@@ -120,10 +120,6 @@ body {
   button {
     font-size: 15px !important;
   }
-
-  .p-4 {
-    padding: 1.25rem !important;
-  }
 }
 
 /* Prevent cutoff on devices with notches */
