@@ -107,19 +107,37 @@ body {
 
 @media (max-width: 640px) {
   h1 {
-    font-size: 1.5rem !important;
+    font-size: 1.75rem !important;
   }
 
   h2 {
-    font-size: 1.25rem !important;
+    font-size: 1.4rem !important;
   }
 
   p,
   span,
   input,
   button {
-    font-size: 14px !important;
+    font-size: 15px !important;
   }
+
+  .p-4 {
+    padding: 1.25rem !important;
+  }
+}
+
+/* Prevent cutoff on devices with notches */
+.safe-p-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-p-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-px {
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
 }
 
 * {
