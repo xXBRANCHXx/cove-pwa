@@ -1,7 +1,3 @@
 node_modules
 .next
 .env.local
-.vercel
-.env*.local
-pocketbase/pb_data/
-pocketbase/pocketbase

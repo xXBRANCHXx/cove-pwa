@@ -4,30 +4,23 @@
   "description": "Cove messaging app",
   "scripts": {
     "dev": "next dev",
-    "relay": "node turn-server.js",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.3.0",
-    "@huggingface/transformers": "^3.8.1",
-    "bcryptjs": "^3.0.3",
-    "buffer": "^6.0.3",
-    "idb": "^8.0.3",
-    "lucide-react": "^0.292.0",
-    "next": "^14.0.0",
-    "node-forge": "^1.3.3",
-    "node-turn": "^0.0.6",
-    "pocketbase": "^0.26.8",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "next": "^14.0.0",
+    "firebase": "^10.0.0",
+    "lucide-react": "^0.292.0",
+    "@google/generative-ai": "^0.3.0"
   },
   "devDependencies": {
+    "tailwindcss": "^3.3.0",
     "autoprefixer": "^10.4.0",
-    "eslint": "^8.0.0",
-    "eslint-config-next": "^14.0.0",
     "postcss": "^8.4.0",
-    "tailwindcss": "^3.3.0"
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0"
   }
 }
