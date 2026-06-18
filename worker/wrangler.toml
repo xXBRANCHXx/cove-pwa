@@ -7,3 +7,5 @@ B2_KEY_ID = "005f812792503b50000000001"
 # B2_APPLICATION_KEY should be set as a secret: wrangler secret put B2_APPLICATION_KEY
 B2_BUCKET_ID = "ef4881b2c709928590c30b15"
 B2_BUCKET_NAME = "cove-pwa-storage"
+ALLOWED_ORIGIN = "*"
+# STORAGE_UPLOAD_TOKEN should be set as a secret: wrangler secret put STORAGE_UPLOAD_TOKEN

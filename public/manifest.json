@@ -1,0 +1,29 @@
+{
+    "name": "Cove Messenger",
+    "short_name": "Cove",
+    "description": "Secure, Private, Fast — End-to-End Encrypted Messaging",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0a0f1e",
+    "theme_color": "#00337C",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "https://image2url.com/r2/default/images/1771570994422-1886044a-26e3-4ab8-be8e-3e38f6b5af80.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://image2url.com/r2/default/images/1771570994422-1886044a-26e3-4ab8-be8e-3e38f6b5af80.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "categories": [
+        "communication",
+        "social"
+    ],
+    "lang": "en",
+    "scope": "/",
+    "prefer_related_applications": false
+}
